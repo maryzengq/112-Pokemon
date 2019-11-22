@@ -292,9 +292,6 @@ class BattleMode(Mode):
         'Wrap': {'name': 'Wrap', 'power': 15, 'type': 'Normal', 
                 'super effective against': ['N/A'], 
                 'not very effective against': ['Rock', 'Steel'], 'acc': 90},
-        'Recover': {'name': 'Recover', 'power': 10, 'type': 'Normal', 
-                'super effective against': ['N/A'], 
-                'not very effective against': ['Rock', 'Steel'], 'acc': 90},
         'Knock Off': {'name': 'Knock Off', 'power': 65, 'type': 'Dark',
                     'super effective against': ['Psychic', 'Ghost'],
                     'not very effective against': ['Fighting', 'Dark', 'Fairy'],
@@ -343,15 +340,6 @@ class BattleMode(Mode):
         'Pound': {'name': 'Pound', 'power': 40, 'type': 'Normal',
                 'super effective against': ['N/A'],
                 'not very effective against': ['Rock', 'Steel'], 'acc': 100}, 
-        'Sing': {'name': 'Sing', 'power': 0, 'type': 'Normal',
-                'super effective against': ['N/A'],
-                'not very effective against': ['Rock', 'Steel'], 'acc': 55},
-        'Encore': {'name': 'Encore', 'power': 0, 'type': 'Normal',
-                'super effective against': ['N/A'],
-                'not very effective against': ['Rock', 'Steel'], 'acc': 100},
-        'Charm': {'name': 'Charm', 'power': 0, 'type': 'Normal',
-                'super effective against': ['N/A'],
-                'not very effective against': ['Rock', 'Steel'], 'acc': 100},
         'Absorb': {'name': 'Absorb', 'power': 20, 'type': 'Grass',
                 'super effective against': ['Water', 'Ground', 'Rock'],
                 'not very effective against': ['Fire', 'Grass', 'Poison',
@@ -401,55 +389,196 @@ class BattleMode(Mode):
             def __init__(self, name):
                 startPokemon = {
             'Pikachu': {'Type': ['Electric'], 'HP': 35, 'Moves': ['Nuzzle', 
-                        'Quick Attack', 'Thunder Shock'], 'Attack': 55, 'Defense': 40,
+                        'Quick Attack', 'Thunder Shock'],
                         'Speed': 90, 'exp': 0},
             'Charizard': {'Type': ['Fire', 'Flying'], 'HP': 78, 'Moves': [ 'Air Slash',
-                        'Ember', 'Scratch'], 'Attack': 84,
-                        'Defense': 78, 'Speed': 100, 'exp': 0},
+                        'Ember', 'Scratch'], 'Speed': 100, 'exp': 0},
             'Squirtle': {'Type': ['Water'], 'HP': 44, 'Moves': ['Tackle', 'Water Gun',
-                        'Bite'], 'Attack': 48, 'Defense': 65, 'Speed': 43, 'exp': 0},
+                        'Bite'], 'Speed': 43, 'exp': 0},
             'Mewtwo': {'Type': ['Psychic'], 'HP': 106, 'Moves': ['Confusion',
-                    'Ancient Power', 'Psycho Cut'], 'Attack': 110, 'Defense': 90,
+                    'Ancient Power', 'Psycho Cut'],
                     'Speed': 130, 'exp': 0},
             'Gengar': {'Type': ['Ghost', 'Poison'], 'HP': 60, 'Moves': ['Lick',
-                    'Shadow Punch'], 'Attack': 65, 'Defense': 60, 'Speed': 110,
-                    'exp': 0},
+                    'Shadow Punch'], 'Speed': 110, 'exp': 0},
             'Eevee': {'Type': ['Normal'], 'HP': 55, 'Moves': ['Covet', 'Sand Attack',
-                    'Quick Attack'], 'Attack': 55, 'Defense': 50, 'Speed': 55,
-                    'exp': 0},
+                    'Quick Attack'], 'Speed': 55, 'exp': 0},
             'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25, 'Moves': [ 'Tackle',
-                        'Thunder Shock'], 'Attack': 35, 'Defense': 70, 'Speed': 45,
-                        'exp': 0},
+                        'Thunder Shock'], 'Speed': 45, 'exp': 0},
             'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45, 'Moves': ['Tackle',
-                        'Vine Whip', 'Razor Leaf'], 'Attack': 49, 'Defense': 49,
-                        'Speed': 45, 'exp': 0},
+                        'Vine Whip', 'Razor Leaf'], 'Speed': 45, 'exp': 0},
             'Charmander': {'Type': ['Fire'], 'HP': 39, 'Moves': ['Scratch', 'Ember',
-                        'Fire Spin'], 'Attack': 52, 'Defense': 43, 'Speed': 65,
-                        'exp': 0},
+                        'Fire Spin'], 'Speed': 65, 'exp': 0},
             'Deoxys': {'Type': ['Psychic'], 'HP': 50, 'Moves': ['Wrap', 'Pursuit',
-                    'Knock Off'], 'Attack': 150, 'Defense': 50,
-                    'Speed': 150, 'exp': 0},
+                    'Knock Off'], 'Speed': 150, 'exp': 0},
             'Golem': {'Type': ['Rock', 'Ground'], 'HP': 80, 'Moves': [ 'Tackle',
-                    'Rock Throw', 'Mega Punch'], 'Attack': 120, 'Defense': 130,
-                    'Speed': 45, 'exp': 0},
+                    'Rock Throw', 'Mega Punch'], 'Speed': 45, 'exp': 0},
             'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves': ['Aqua Jet',
-                        'Ice Shard', 'Headbutt'], 'Attack': 70, 'Defense': 80,
-                        'Speed': 70, 'exp': 0},
-            'Cleffa': {'Type': ['Fairy'], 'HP': 50, 'Moves': ['Pound', 'Sing'],
-                    'Attack': 25, 'Defense': 28, 'Speed': 15, 'exp': 0},
+                        'Ice Shard', 'Headbutt'], 'Speed': 70, 'exp': 0},
             'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
-                        'Fairy Wind', 'Struggle Bug'], 'Attack': 45,
-                        'Defense': 40, 'Speed': 84, 'exp': 0}}
+                        'Fairy Wind', 'Struggle Bug'], 'Speed': 84, 'exp': 0}}
                 self.name = name
                 self.pokemonList = startPokemon
                 self.type_ = self.pokemonList[name]['Type']
                 self.hp = self.pokemonList[name]['HP']
                 self.moves = self.pokemonList[name]['Moves']
-                self.attack = self.pokemonList[name]['Attack']
-                self.defense = self.pokemonList[name]['Defense']
                 self.speed = self.pokemonList[name]['Speed']
                 self.exp = self.pokemonList[name]['exp']
                 self.level = 1
+
+            def damage(self, move, level, opponent_type):
+                # calculate the damage using the formula
+                # Damage=((2×Level5+2)×Power×AD50)×Modifier
+                superEffective = {
+                "Normal": ["N/A"],
+                "Fire": ["Grass", "Ice", "Bug", "Steel"],
+                "Water": ["Fire", "Ground", "Rock"],
+                "Electric": ["Water", "Flying"],
+                "Grass": ["Water", "Ground", "Rock"],
+                "Ice": ["Grass", "Ground", "Flying", "Dragon"],
+                "Ground": ["Fire", "Electric", "Poison", "Rock", "Steel"],
+                "Flying": ["Grass", "Fighting", "Bug"],
+                "Psychic": ["Fighting", "Poison"],
+                "Bug": ["Grass", "Psychic", "Dark"],
+                "Rock": ["Fire", "Ice", "Flying", "Bug"],
+                "Ghost": ["Psychic", "Ghost"],
+                "Dragon": ["Dragon"],
+                "Dark": ["Psychic", "Ghost"],
+                "Steel": ["Ice", "Rock", "Fairy"],
+                "Fairy": ["Fighting", "Dragon", "Dark"]
+                            }
+
+                notEffective = {
+                "Normal": ["Rock", "Steel"],
+                "Fire": ["Fire", "Water", "Rock", "Dragon"],
+                "Water": ["Water", "Grass", "Dragon"],
+                "Electric": ["Electric", "Grass", "Dragon"],
+                "Grass": ["Fire", "Grass", "Poison", "Flying",
+                            "Bug", "Dragon", "Steel"],
+                "Ice": ["Fire", "Water", "Ice", "Steel"],
+                "Ground": ["Grass", "Bug"],
+                "Flying": ["Electric", "Rock", "Steel"],
+                "Psychic": ["Psychic", "Steel"],
+                "Bug": ["Fire", "Fighting", "Poison", "Flying",
+                        "Ghost", "Steel", "Fairy"],
+                "Rock": ["Fighting", "Ground", "Steel"],
+                "Ghost": ["Dark"],
+                "Dragon": ["Steel"],
+                "Dark": ["Fighting", "Dark", "Fairy"],
+                "Steel": ["Fire", "Water", "Electric", "Steel"],
+                "Fairy": ["Fire", "Poison", "Steel"]
+                                }
+
+                moves = {
+                "Normal": ['Quick Attack', 'Slam', 'Scratch', 'Slash',
+                            'Tackle', 'Skull Bash', 'Covet', 'Take Down',
+                            'Last Resort', 'Wrap', 'Mega Punch', 'Headbutt',
+                            'Double Edge', 'Pound'],
+                "Fire": ['Ember', 'Flare Blitz', 'Fire Spin', 'Flamethrower'],
+                "Water": ['Water Gun', 'Aqua Tail', 'Aqua Jet', 'Waterfall'],
+                "Electric": ['Nuzzle', 'Thunder Shock', 'Spark', 'Thunderbolt'],
+                "Grass": ['Vine Whip', 'Razor Leaf', 'Solar Beam', 'Absorb'],
+                "Ice": ['Ice Shard'],
+                "Ground": ['Sand Attack', 'Earthquake'],
+                "Flying": ['Air Slash'],
+                "Psychic": ['Confusion', 'Psycho Cut','Psystrike', 'Future Sight',
+                            'Dream Eater', 'Psycho Boost'],
+                "Bug": ['Struggle Bug', 'Bug Buzz'],
+                "Rock": ['Ancient Power', 'Rock Throw', 'Rock Slide'],
+                "Ghost": ['Lick', 'Shadow Punch'],
+                "Dragon": ['Outrage'],
+                "Dark": ['Bite', 'Sucker Punch', 'Knock Off', 'Pursuit'],
+                "Steel": ['Flash Cannon'],
+                "Fairy": ['Fairy Wind', 'Draining Kiss']
+                        }
+                # Run through the moves in the moves dictionary to see
+                # if it matches one of moves of the selected pokemon
+                # if the loop finds one matching move according to the pokemon's type,
+                # the loop will stop.
+                done = False
+                for type_, allMoves in moves.items():
+                    for singleMove in allMoves:
+                        if singleMove == move:
+                            moveType = type_
+                            done = True
+                            break
+                    if done is True:
+                        break
+                # figure out the type modifier:
+                # if one of the move of the opponent is in the super_effective dict,
+                # the type modifier is multiplied by 2
+                # if the in not very effetive dict, it is multiplied by 0.5
+                # else, the type modifier is multiplied by 1.
+                t_modifier = 1
+                for _type in opponent_type:
+                    if _type in superEffective[moveType]:
+                        t_modifier *= 2
+                    elif _type in notEffective[moveType]:
+                        t_modifier *= 0.5
+                    else:
+                        t_modifier *= 1
+                self.speed = self.speed/2
+
+                # generate random number between 0 to 511 and figure out
+                # if the damage is critical.
+                import random as rand
+                POWERS = {
+                    'Nuzzle': 20,
+                    'Quick Attack': 40,
+                    'Thunder Shock': 40,
+                    'Spark': 65,
+                    'Slam': 80,
+                    'Ember': 40,
+                    'Scratch': 40,
+                    'Air Slash': 75,
+                    'Slash': 70,
+                    'Flare Blitz': 120,
+                    'Tackle': 40,
+                    'Water Gun': 40,
+                    'Bite': 60,
+                    'Aqua Tail': 90,
+                    'Skull Bash': 130,
+                    'Confusion': 50,
+                    'Ancient Power': 60,
+                    'Psycho Cut': 70,
+                    'Psystrike': 100,
+                    'Future Sight': 120,
+                    'Lick': 30,
+                    'Shadow Punch': 60,
+                    'Sucker Punch': 70,
+                    'Dream Eater': 100,
+                    'Covet': 60,
+                    'Sand Attack': 55,
+                    'Flash Cannon': 80,
+                    'Take Down': 90,
+                    'Last Resort': 140,
+                    'Thunderbolt': 90,
+                    'Vine Whip': 45,
+                    'Razor Leaf': 55,
+                    'Solar Beam': 120,
+                    'Fire Spin': 35,
+                    'Flamethrower': 90,
+                    'Wrap': 15,
+                    'Knock Off': 65,
+                    'Pursuit': 40,
+                    'Psycho Boost': 140,
+                    'Rock Throw': 50,
+                    'Mega Punch': 80,
+                    'Rock Slide': 75,
+                    'Earthquake': 100,
+                    'Aqua Jet': 40,
+                    'Headbutt': 70,
+                    'Ice Shard': 40,
+                    'Waterfall': 80,
+                    'Double Edge': 120,
+                    'Pound': 40,
+                    'Absorb': 20,
+                    'Fairy Wind': 40,
+                    'Struggle Bug': 50,
+                    'Draining Kiss': 50,
+                    'Bug Buzz': 90}
+                # apply the formula to calculate the total damage
+                damage = (POWERS[move] * 0.1 * t_modifier)
+                return damage
 
         # Shows the set of all the player's available pokémon
         ask_p_pkm = (f'Your character choices are'
@@ -470,8 +599,7 @@ class BattleMode(Mode):
         pokemon_characters = ['Pikachu', 'Charizard', 'Squirtle',
                               'Mewtwo', 'Gengar', 'Eevee', 'Magnemite',
                               'Bulbasaur', 'Charmander', 'Deoxys',
-                              'Golem', 'Dewgong', 'Cleffa',
-                              'Cutiefly']
+                              'Golem', 'Dewgong','Cutiefly']
 
         # computer chooses a character,
         # then initializes the computer (or opponent) pokémon
@@ -487,13 +615,15 @@ class BattleMode(Mode):
             counter = 1
             print('Opponent starts.')
 
+        
         # Finds the most damaging moves (according to type)
         # from the list generated from mode.best_move
         highest = 0
         for key in mode.best_move(o_pkm, p_pkm).keys():
             if key > highest:
                 highest = key
-                
+
+        '''        
         sacrifice = input("Would you like to sacrifice 10% "
                           "of your HP in exchange for the best "
                           "move against your opponent? y/n ")
@@ -501,7 +631,7 @@ class BattleMode(Mode):
             p_pkm.hp = 0.9 * p_pkm.hp
             print('Your best move is', mode.move_help(p_pkm, o_pkm)[-1])
             print("Your current hp: ", p_pkm.hp)
-
+        '''
 
         # the pokémon alternate damaging each other
         while (p_pkm.hp > 0 and o_pkm.hp > 0):
@@ -518,7 +648,7 @@ class BattleMode(Mode):
 
                 # subtracts the damage of the player's pkm from
                 # the opponent's hp
-                o_pkm.hp -= p_pkm.damage(move, player.level, o_pkm.type_)
+                o_pkm.hp -= p_pkm.damage(move, mode.player.level, o_pkm.type_)
                 print(f"Your HP: {p_pkm.hp:.2f} Opponent's HP: {o_pkm.hp:.2f}")
 
             else:
@@ -533,8 +663,8 @@ class BattleMode(Mode):
                 # additionally, the computer always uses the player's level
                 # so that the computer and player are evenly matched
                 p_pkm.hp -= o_pkm.damage(
-                    rand.choice(self.best_move(o_pkm, p_pkm)[highest]),
-                                player.level, p_pkm.type_)
+                    rand.choice(mode.best_move(o_pkm, p_pkm)[highest]),
+                                mode.player.level, p_pkm.type_)
                 print(f"Your HP: {p_pkm.hp:.2f} Opponent's HP: {o_pkm.hp:.2f}")
 
             counter += 1
@@ -574,61 +704,4 @@ class MyModalApp(ModalApp):
         app.timerDelay = 50
 
 app = MyModalApp(width=600, height=400)
-
-
-class Pokemon(object):
-    def __init__(self, name):
-        startPokemon = {
-    'Pikachu': {'Type': ['Electric'], 'HP': 35, 'Moves': ['Nuzzle', 
-                'Quick Attack', 'Thunder Shock'], 'Attack': 55, 'Defense': 40,
-                'Speed': 90, 'exp': 0},
-    'Charizard': {'Type': ['Fire', 'Flying'], 'HP': 78, 'Moves': [ 'Air Slash',
-                  'Ember', 'Scratch'], 'Attack': 84,
-                  'Defense': 78, 'Speed': 100, 'exp': 0},
-    'Squirtle': {'Type': ['Water'], 'HP': 44, 'Moves': ['Tackle', 'Water Gun',
-                 'Bite'], 'Attack': 48, 'Defense': 65, 'Speed': 43, 'exp': 0},
-    'Mewtwo': {'Type': ['Psychic'], 'HP': 106, 'Moves': ['Confusion',
-               'Ancient Power', 'Psycho Cut'], 'Attack': 110, 'Defense': 90,
-               'Speed': 130, 'exp': 0},
-    'Gengar': {'Type': ['Ghost', 'Poison'], 'HP': 60, 'Moves': ['Lick',
-               'Shadow Punch'], 'Attack': 65, 'Defense': 60, 'Speed': 110,
-               'exp': 0},
-    'Eevee': {'Type': ['Normal'], 'HP': 55, 'Moves': ['Covet', 'Sand Attack',
-              'Quick Attack'], 'Attack': 55, 'Defense': 50, 'Speed': 55,
-              'exp': 0},
-    'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25, 'Moves': [ 'Tackle',
-                  'Thunder Shock'], 'Attack': 35, 'Defense': 70, 'Speed': 45,
-                  'exp': 0},
-    'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45, 'Moves': ['Tackle',
-                  'Vine Whip', 'Razor Leaf'], 'Attack': 49, 'Defense': 49,
-                  'Speed': 45, 'exp': 0},
-    'Charmander': {'Type': ['Fire'], 'HP': 39, 'Moves': ['Scratch', 'Ember',
-                   'Fire Spin'], 'Attack': 52, 'Defense': 43, 'Speed': 65,
-                   'exp': 0},
-    'Deoxys': {'Type': ['Psychic'], 'HP': 50, 'Moves': ['Wrap', 'Pursuit',
-               'Knock Off'], 'Attack': 150, 'Defense': 50,
-               'Speed': 150, 'exp': 0},
-    'Golem': {'Type': ['Rock', 'Ground'], 'HP': 80, 'Moves': [ 'Tackle',
-              'Rock Throw', 'Mega Punch'], 'Attack': 120, 'Defense': 130,
-              'Speed': 45, 'exp': 0},
-    'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves': ['Aqua Jet',
-                'Ice Shard', 'Headbutt'], 'Attack': 70, 'Defense': 80,
-                'Speed': 70, 'exp': 0},
-    'Cleffa': {'Type': ['Fairy'], 'HP': 50, 'Moves': ['Pound', 'Sing'],
-               'Attack': 25, 'Defense': 28, 'Speed': 15, 'exp': 0},
-    'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
-                 'Fairy Wind', 'Struggle Bug'], 'Attack': 45,
-                 'Defense': 40, 'Speed': 84, 'exp': 0}
-}
-        self.name = name
-        self.pokemonList = startPokemon
-        self.type_ = self.pokemonList[name]['Type']
-        self.HP = self.pokemonList[name]['HP']
-        self.moves = self.pokemonList[name]['Moves']
-        self.attack = self.pokemonList[name]['Attack']
-        self.defense = self.pokemonList[name]['Defense']
-        self.speed = self.pokemonList[name]['Speed']
-        self.exp = self.pokemonList[name]['exp']
-        self.level = 1
-
 

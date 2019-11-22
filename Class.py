@@ -36,8 +36,6 @@ class Pokemon(object):
     'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves': ['Aqua Jet',
                 'Ice Shard', 'Headbutt'], 'Attack': 70, 'Defense': 80,
                 'Speed': 70, 'exp': 0},
-    'Cleffa': {'Type': ['Fairy'], 'HP': 50, 'Moves': ['Pound', 'Sing'],
-               'Attack': 25, 'Defense': 28, 'Speed': 15, 'exp': 0},
     'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
                  'Fairy Wind', 'Struggle Bug'], 'Attack': 45,
                  'Defense': 40, 'Speed': 84, 'exp': 0}
@@ -53,10 +51,169 @@ class Pokemon(object):
         self.exp = self.pokemonList[name]['exp']
         self.level = 1
 
-    def levelUp(self, battleResult):
-        #battleResult will either return the exp f
-        pass
-        #if (self.exp + battleResult):
+    def damage(self, move, level, opponent_type):
+        # calculate the damage using the formula
+        # Damage=((2×Level5+2)×Power×AD50)×Modifier
+        SUPER_EFFECTIVE = {
+           "Normal": ["N/A"],
+           "Fire": ["Grass", "Ice", "Bug", "Steel"],
+           "Water": ["Fire", "Ground", "Rock"],
+           "Electric": ["Water", "Flying"],
+           "Grass": ["Water", "Ground", "Rock"],
+           "Ice": ["Grass", "Ground", "Flying", "Dragon"],
+           "Ground": ["Fire", "Electric", "Poison", "Rock", "Steel"],
+           "Flying": ["Grass", "Fighting", "Bug"],
+           "Psychic": ["Fighting", "Poison"],
+           "Bug": ["Grass", "Psychic", "Dark"],
+           "Rock": ["Fire", "Ice", "Flying", "Bug"],
+           "Ghost": ["Psychic", "Ghost"],
+           "Dragon": ["Dragon"],
+           "Dark": ["Psychic", "Ghost"],
+           "Steel": ["Ice", "Rock", "Fairy"],
+           "Fairy": ["Fighting", "Dragon", "Dark"]
+                       }
+
+        NOT_VERY_EFFECTIVE = {
+          "Normal": ["Rock", "Steel"],
+          "Fire": ["Fire", "Water", "Rock", "Dragon"],
+          "Water": ["Water", "Grass", "Dragon"],
+          "Electric": ["Electric", "Grass", "Dragon"],
+          "Grass": ["Fire", "Grass", "Poison", "Flying",
+                    "Bug", "Dragon", "Steel"],
+          "Ice": ["Fire", "Water", "Ice", "Steel"],
+          "Ground": ["Grass", "Bug"],
+          "Flying": ["Electric", "Rock", "Steel"],
+          "Psychic": ["Psychic", "Steel"],
+          "Bug": ["Fire", "Fighting", "Poison", "Flying",
+                  "Ghost", "Steel", "Fairy"],
+          "Rock": ["Fighting", "Ground", "Steel"],
+          "Ghost": ["Dark"],
+          "Dragon": ["Steel"],
+          "Dark": ["Fighting", "Dark", "Fairy"],
+          "Steel": ["Fire", "Water", "Electric", "Steel"],
+          "Fairy": ["Fire", "Poison", "Steel"]
+                          }
+
+        MOVES = {
+          "Normal": ['Quick Attack', 'Slam', 'Scratch', 'Slash',
+                     'Tackle', 'Skull Bash', 'Covet', 'Take Down',
+                     'Last Resort', 'Wrap', 'Mega Punch', 'Headbutt',
+                     'Double Edge', 'Pound'],
+          "Fire": ['Ember', 'Flare Blitz', 'Fire Spin', 'Flamethrower'],
+          "Water": ['Water Gun', 'Aqua Tail', 'Aqua Jet', 'Waterfall'],
+          "Electric": ['Nuzzle', 'Thunder Shock', 'Spark', 'Thunderbolt'],
+          "Grass": ['Vine Whip', 'Razor Leaf', 'Solar Beam', 'Absorb'],
+          "Ice": ['Ice Shard'],
+          "Ground": ['Sand Attack', 'Earthquake'],
+          "Flying": ['Air Slash'],
+          "Psychic": ['Confusion', 'Psycho Cut','Psystrike', 'Future Sight',
+                      'Dream Eater', 'Psycho Boost'],
+          "Bug": ['Struggle Bug', 'Bug Buzz'],
+          "Rock": ['Ancient Power', 'Rock Throw', 'Rock Slide'],
+          "Ghost": ['Lick', 'Shadow Punch'],
+          "Dragon": ['Outrage'],
+          "Dark": ['Bite', 'Sucker Punch', 'Knock Off', 'Pursuit'],
+          "Steel": ['Flash Cannon'],
+          "Fairy": ['Fairy Wind', 'Draining Kiss']
+                }
+        # Run through the moves in the moves dictionary to see
+        # if it matches one of moves of the selected pokemon
+        # if the loop finds one matching move according to the pokemon's type,
+        # the loop will stop.
+        done = False
+        for type_, all_move in MOVES.items():
+            for single_move in all_move:
+                if single_move == move:
+                    move_type = type_
+                    done = True
+                    break
+            if done is True:
+                break
+        # figure out the type modifier:
+        # if one of the move of the opponent is in the super_effective dict,
+        # the type modifier is multiplied by 2
+        # if the in not very effetive dict, it is multiplied by 0.5
+        # else, the type modifier is multiplied by 1.
+        t_modifier = 1
+        for _type in opponent_type:
+            if _type in SUPER_EFFECTIVE[move_type]:
+                t_modifier *= 2
+            elif _type in NOT_VERY_EFFECTIVE[move_type]:
+                t_modifier *= 0.5
+            else:
+                t_modifier *= 1
+        self.speed = self.speed/2
+        # generate random number between 0 to 511 and figure out
+        # if the damage is critical.
+        import random as rand
+        random_critical_number = rand.randint(0, 511)
+        if random_critical_number < self.speed:
+            critical = 2
+            print('Critical Damage!!!!')
+        else:
+            critical = 1
+        random_float = rand.randint(85, 100)/100
+        modifier = critical*random_float*t_modifier
+        POWERS = {
+            'Nuzzle': 20,
+            'Quick Attack': 40,
+            'Thunder Shock': 40,
+            'Spark': 65,
+            'Slam': 80,
+            'Ember': 40,
+            'Scratch': 40,
+            'Air Slash': 75,
+            'Slash': 70,
+            'Flare Blitz': 120,
+            'Tackle': 40,
+            'Water Gun': 40,
+            'Bite': 60,
+            'Aqua Tail': 90,
+            'Skull Bash': 130,
+            'Confusion': 50,
+            'Ancient Power': 60,
+            'Psycho Cut': 70,
+            'Psystrike': 100,
+            'Future Sight': 120,
+            'Lick': 30,
+            'Shadow Punch': 60,
+            'Sucker Punch': 70,
+            'Dream Eater': 100,
+            'Covet': 60,
+            'Sand Attack': 55,
+            'Flash Cannon': 80,
+            'Take Down': 90,
+            'Last Resort': 140,
+            'Thunderbolt': 90,
+            'Vine Whip': 45,
+            'Razor Leaf': 55,
+            'Solar Beam': 120,
+            'Fire Spin': 35,
+            'Flamethrower': 90,
+            'Wrap': 15
+            'Knock Off': 65,
+            'Pursuit': 40,
+            'Psycho Boost': 140
+            'Rock Throw': 50,
+            'Mega Punch': 80,
+            'Rock Slide': 75,
+            'Earthquake': 100,
+            'Aqua Jet': 40,
+            'Headbutt': 70,
+            'Ice Shard': 40,
+            'Waterfall': 80,
+            'Double Edge': 120,
+            'Pound': 40,
+            'Absorb': 20,
+            'Fairy Wind': 40,
+            'Struggle Bug': 50,
+            'Draining Kiss': 50,
+            'Bug Buzz': 90
+                }
+        # apply the formula to calculate the total damage
+        damage = ((((2 * level) / 5 + 2) * POWERS[move] *
+                   self.attack/self.defense)/50)*modifier
+        return damage
 
 
 def best_move(self, computer, player):
@@ -196,9 +353,6 @@ def best_move(self, computer, player):
     'Wrap': {'name': 'Wrap', 'power': 15, 'type': 'Normal', 
              'super effective against': ['N/A'], 
              'not very effective against': ['Rock', 'Steel'], 'acc': 90},
-    'Recover': {'name': 'Recover', 'power': 10, 'type': 'Normal', 
-             'super effective against': ['N/A'], 
-             'not very effective against': ['Rock', 'Steel'], 'acc': 90},
     'Knock Off': {'name': 'Knock Off', 'power': 65, 'type': 'Dark',
                   'super effective against': ['Psychic', 'Ghost'],
                   'not very effective against': ['Fighting', 'Dark', 'Fairy'],
@@ -247,15 +401,6 @@ def best_move(self, computer, player):
     'Pound': {'name': 'Pound', 'power': 40, 'type': 'Normal',
               'super effective against': ['N/A'],
               'not very effective against': ['Rock', 'Steel'], 'acc': 100}, 
-    'Sing': {'name': 'Sing', 'power': 0, 'type': 'Normal',
-             'super effective against': ['N/A'],
-             'not very effective against': ['Rock', 'Steel'], 'acc': 55},
-    'Encore': {'name': 'Encore', 'power': 0, 'type': 'Normal',
-               'super effective against': ['N/A'],
-               'not very effective against': ['Rock', 'Steel'], 'acc': 100},
-    'Charm': {'name': 'Charm', 'power': 0, 'type': 'Normal',
-              'super effective against': ['N/A'],
-              'not very effective against': ['Rock', 'Steel'], 'acc': 100},
     'Absorb': {'name': 'Absorb', 'power': 20, 'type': 'Grass',
                'super effective against': ['Water', 'Ground', 'Rock'],
                'not very effective against': ['Fire', 'Grass', 'Poison',
