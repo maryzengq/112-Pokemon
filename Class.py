@@ -1,55 +1,42 @@
 class Pokemon(object):
     def __init__(self, name):
         startPokemon = {
-    'Pikachu': {'Type': ['Electric'], 'HP': 35, 'Moves': ['Nuzzle', 
-                'Quick Attack', 'Thunder Shock'], 'Attack': 55, 'Defense': 40,
-                'Speed': 90, 'exp': 0},
-    'Charizard': {'Type': ['Fire', 'Flying'], 'HP': 78, 'Moves': [ 'Air Slash',
-                  'Ember', 'Scratch'], 'Attack': 84,
-                  'Defense': 78, 'Speed': 100, 'exp': 0},
-    'Squirtle': {'Type': ['Water'], 'HP': 44, 'Moves': ['Tackle', 'Water Gun',
-                 'Bite'], 'Attack': 48, 'Defense': 65, 'Speed': 43, 'exp': 0},
-    'Mewtwo': {'Type': ['Psychic'], 'HP': 106, 'Moves': ['Confusion',
-               'Ancient Power', 'Psycho Cut'], 'Attack': 110, 'Defense': 90,
-               'Speed': 130, 'exp': 0},
-    'Gengar': {'Type': ['Ghost', 'Poison'], 'HP': 60, 'Moves': ['Lick',
-               'Shadow Punch'], 'Attack': 65, 'Defense': 60, 'Speed': 110,
-               'exp': 0},
-    'Eevee': {'Type': ['Normal'], 'HP': 55, 'Moves': ['Covet', 'Sand Attack',
-              'Quick Attack'], 'Attack': 55, 'Defense': 50, 'Speed': 55,
-              'exp': 0},
-    'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25, 'Moves': [ 'Tackle',
-                  'Thunder Shock'], 'Attack': 35, 'Defense': 70, 'Speed': 45,
-                  'exp': 0},
-    'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45, 'Moves': ['Tackle',
-                  'Vine Whip', 'Razor Leaf'], 'Attack': 49, 'Defense': 49,
-                  'Speed': 45, 'exp': 0},
-    'Charmander': {'Type': ['Fire'], 'HP': 39, 'Moves': ['Scratch', 'Ember',
-                   'Fire Spin'], 'Attack': 52, 'Defense': 43, 'Speed': 65,
-                   'exp': 0},
-    'Deoxys': {'Type': ['Psychic'], 'HP': 50, 'Moves': ['Wrap', 'Pursuit',
-               'Knock Off'], 'Attack': 150, 'Defense': 50,
-               'Speed': 150, 'exp': 0},
-    'Golem': {'Type': ['Rock', 'Ground'], 'HP': 80, 'Moves': [ 'Tackle',
-              'Rock Throw', 'Mega Punch'], 'Attack': 120, 'Defense': 130,
-              'Speed': 45, 'exp': 0},
-    'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves': ['Aqua Jet',
-                'Ice Shard', 'Headbutt'], 'Attack': 70, 'Defense': 80,
-                'Speed': 70, 'exp': 0},
-    'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
-                 'Fairy Wind', 'Struggle Bug'], 'Attack': 45,
-                 'Defense': 40, 'Speed': 84, 'exp': 0}
-}
-        self.name = name
-        self.pokemonList = startPokemon
-        self.type_ = self.pokemonList[name]['Type']
-        self.HP = self.pokemonList[name]['HP']
-        self.moves = self.pokemonList[name]['Moves']
-        self.attack = self.pokemonList[name]['Attack']
-        self.defense = self.pokemonList[name]['Defense']
-        self.speed = self.pokemonList[name]['Speed']
-        self.exp = self.pokemonList[name]['exp']
-        self.level = 1
+            'Pikachu': {'Type': ['Electric'], 'HP': 35, 'Moves': ['Nuzzle', 
+                        'Quick Attack', 'Thunder Shock'],
+                        'Speed': 90},
+            'Charizard': {'Type': ['Fire', 'Flying'], 'HP': 78, 'Moves': [ 'Air Slash',
+                        'Ember', 'Scratch'], 'Speed': 100, 'exp': 0},
+            'Squirtle': {'Type': ['Water'], 'HP': 44, 'Moves': ['Tackle', 'Water Gun',
+                        'Bite'], 'Speed': 43, 'exp': 0},
+            'Mewtwo': {'Type': ['Psychic'], 'HP': 106, 'Moves': ['Confusion',
+                    'Ancient Power', 'Psycho Cut'],
+                    'Speed': 130, 'exp': 0},
+            'Gengar': {'Type': ['Ghost', 'Poison'], 'HP': 60, 'Moves': ['Lick',
+                    'Shadow Punch'], 'Speed': 110, 'exp': 0},
+            'Eevee': {'Type': ['Normal'], 'HP': 55, 'Moves': ['Covet', 'Sand Attack',
+                    'Quick Attack'], 'Speed': 55, 'exp': 0},
+            'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25, 'Moves': [ 'Tackle',
+                        'Thunder Shock'], 'Speed': 45, 'exp': 0},
+            'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45, 'Moves': ['Tackle',
+                        'Vine Whip', 'Razor Leaf'], 'Speed': 45, 'exp': 0},
+            'Charmander': {'Type': ['Fire'], 'HP': 39, 'Moves': ['Scratch', 'Ember',
+                        'Fire Spin'], 'Speed': 65, 'exp': 0},
+            'Deoxys': {'Type': ['Psychic'], 'HP': 50, 'Moves': ['Wrap', 'Pursuit',
+                    'Knock Off'], 'Speed': 150, 'exp': 0},
+            'Golem': {'Type': ['Rock', 'Ground'], 'HP': 80, 'Moves': [ 'Tackle',
+                    'Rock Throw', 'Mega Punch'], 'Speed': 45, 'exp': 0},
+            'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves': ['Aqua Jet',
+                        'Ice Shard', 'Headbutt'], 'Speed': 70, 'exp': 0},
+            'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
+                        'Fairy Wind', 'Struggle Bug'], 'Speed': 84, 'exp': 0}}
+                self.name = name
+                self.pokemonList = startPokemon
+                self.type_ = self.pokemonList[name]['Type']
+                self.hp = self.pokemonList[name]['HP']
+                self.moves = self.pokemonList[name]['Moves']
+                self.speed = self.pokemonList[name]['Speed']
+                self.exp = self.pokemonList[name]['exp']
+                self.level = 1
 
     def damage(self, move, level, opponent_type):
         # calculate the damage using the formula
