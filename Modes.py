@@ -22,7 +22,6 @@ class Player(object):
         # Returns the character list the player can choose from
         return set(['Bulbasaur', 'Charmander', 'Squirtle'] + defeated)
 
-
 class SplashScreenMode(Mode):
     def appStarted(mode):
         mode.startpic = mode.app.loadImage('start.png')
@@ -60,9 +59,9 @@ class GameMode(Mode):
         mode.mapPlayerX = mode.mapLeftEnd + mode.mapWidth/2
         mode.mapPlayerY = mode.mapTopEnd + mode.mapHeight/2
         
-        mode.c_pkmList = [(random.randint(mode.mapLeftEnd + mode.scrollMargin,
+        mode.c_pkmList = [(rand.randint(mode.mapLeftEnd + mode.scrollMargin,
                                           mode.mapRightEnd - mode.scrollMargin),
-                           random.randint(mode.mapTopEnd + mode.scrollMargin,
+                           rand.randint(mode.mapTopEnd + mode.scrollMargin,
                                           mode.mapDownEnd - mode.scrollMargin)) 
                            for _ in range(3)]
     
@@ -145,14 +144,12 @@ class GameMode(Mode):
             canvas.create_oval(pkmX-mode.r, pkmY-mode.r,pkmX+mode.r,pkmY+mode.r, 
                                fill='lightGreen')
 
-
 class BattleMode(Mode):
     def appStarted(mode):
         #mode.loadProgress
         mode.pic = mode.app.loadImage('bi.png')
         mode.scalePic = mode.app.scaleImage(mode.pic, 4/3)
         mode.player = Player(0)
-        mode.printInvalidChar = False
 
         mode.battle()
 
@@ -616,17 +613,19 @@ class BattleMode(Mode):
                 return damage
 
         # Provide all the available pokemons 
-        ask_p_pkm = (f'Your character choices are'
+        #ask_p_pkm = (f'Your character choices are'
+                     #f'{mode.player.characterList([])}. Which character would'
+                     #f'you like?')
+        #character = mode.getUserInput(ask_p_pkm).title()
+        character = input(f'Your character choices are'
                      f'{mode.player.characterList([])}. Which character would'
-                     f'you like?')
-        character = mode.getUserInput(ask_p_pkm).title()
+                     f' you like?').title()
 
         # Check whether the name entered is correct
         while character not in mode.player.characterList([]):
-            mode.printInvalidChar = True
-            character = mode.getUserInput(ask_p_pkm).title()
-        mode.printInvalidChar = False
-
+            character = input(f'Your character choices are'
+                     f'{mode.player.characterList([])}. Which character would'
+                     f' you like?').title()
         # Initializes the player's pokémon
         p_pkm = Pokemon(character)
 
@@ -741,11 +740,6 @@ class BattleMode(Mode):
     def redrawAll(mode, canvas):
         canvas.create_image(mode.width/2, mode.height/2,
                             image=ImageTk.PhotoImage(mode.scalePic))
-        if not mode.printInvalidChar:
-            msg = ('You did not input a possible character. '
-                  'Please check spelling.')
-            canvas.create_text(mode.width/2, mode.height/2, text = msg,
-                               font = 'Georgia 20')
 
 
 
@@ -758,7 +752,7 @@ class MyModalApp(ModalApp):
         app.gameMode = GameMode()
         app.helpMode = HelpMode()
         app.battleMode = BattleMode()
-        app.setActiveMode(app.battleMode)
+        app.setActiveMode(app.splashScreenMode)
         app.timerDelay = 50
 
 app = MyModalApp(width=600, height=400)
