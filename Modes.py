@@ -1,6 +1,8 @@
 from cmu_112_graphics import *
 from tkinter import *
-import random as rand
+from PIL import Image 
+import random 
+from pokemonclass import Pokemon
 
 class Player(object):
     def __init__(self, exp):
@@ -21,6 +23,7 @@ class Player(object):
     def characterList(self, defeated):
         # Returns the character list the player can choose from
         return set(['Bulbasaur', 'Charmander', 'Squirtle'] + defeated)
+
 
 class SplashScreenMode(Mode):
     def appStarted(mode):
@@ -59,9 +62,9 @@ class GameMode(Mode):
         mode.mapPlayerX = mode.mapLeftEnd + mode.mapWidth/2
         mode.mapPlayerY = mode.mapTopEnd + mode.mapHeight/2
         
-        mode.c_pkmList = [(rand.randint(mode.mapLeftEnd + mode.scrollMargin,
+        mode.c_pkmList = [(random.randint(mode.mapLeftEnd + mode.scrollMargin,
                                           mode.mapRightEnd - mode.scrollMargin),
-                           rand.randint(mode.mapTopEnd + mode.scrollMargin,
+                           random.randint(mode.mapTopEnd + mode.scrollMargin,
                                           mode.mapDownEnd - mode.scrollMargin)) 
                            for _ in range(3)]
     
@@ -150,11 +153,18 @@ class BattleMode(Mode):
         mode.pic = mode.app.loadImage('bi.png')
         mode.scalePic = mode.app.scaleImage(mode.pic, 4/3)
         mode.player = Player(0)
-
+        mode.startAsking = False
+        mode.changeStartAsking()
+        mode.battle()
+        mode.p_pkm = 'player'
+        mode.o_okm = 'opponent'
+    
+    def changeStartAsking(mode):
+        mode.startAsking = True
         mode.battle()
 
     
-    def best_move(self, computer, player):
+    def best_move(mode, computer, player):
         movesDict = {
         'Nuzzle': {'name': 'Nuzzle', 'power': 20, 'type': 'Electric', 
                 'super effective against': ["Water", "Flying"], 
@@ -360,7 +370,7 @@ class BattleMode(Mode):
 
         return effectiveOrNot
 
-    def move_help(self, p_pkm, o_pkm):
+    def move_help(mode, p_pkm, ):
         # Creating a dictionary that contains player's move
         # and its corresponding damage 
         movesPower = {
@@ -419,49 +429,71 @@ class BattleMode(Mode):
                     'Draining Kiss': 50,
                     'Bug Buzz': 90}
         bestmove = []
-        for type_mod, moves in mode.best_move(p_pkm, o_pkm).items():
+        for type_mod, moves in mode.best_move(mode.p_pkm, mode.mode.o_pkm).items():
             for move in moves:
                 bestmove.append((movesPower[move]*type_mod, move))
         return sorted(bestmove)[-1]
    
-
     def battle(mode):
         class Pokemon(object):
             def __init__(self, name):
                 startPokemon = {
             'Pikachu': {'Type': ['Electric'], 'HP': 35, 'Moves': ['Nuzzle', 
-                        'Quick Attack', 'Thunder Shock'], 'Speed': 90},
+                        'Quick Attack', 'Thunder Shock'], 'Speed': 90,
+                        'Front': 'pikachufront.png', 'Back': 'pikachuback.png'},
             'Charizard': {'Type': ['Fire', 'Flying'], 'HP': 78, 'Moves':
-                          ['Air Slash', 'Ember', 'Scratch'], 'Speed': 100},
+                            ['Air Slash', 'Ember', 'Scratch'], 'Speed': 100,
+                            'Front': 'charifront.png', 'Back': 'chariback.png'},
             'Squirtle': {'Type': ['Water'], 'HP': 44, 'Moves': ['Tackle',
-                         'Water Gun', 'Bite'], 'Speed': 43},
+                         'Water Gun', 'Bite'], 'Speed': 43,
+                         'Front': 'squirfront.png', 'Back': 'squirback.png'},
             'Mewtwo': {'Type': ['Psychic'], 'HP': 106, 'Moves': ['Confusion',
-                    'Ancient Power', 'Psycho Cut'], 'Speed': 130},
+                    'Ancient Power', 'Psycho Cut'], 'Speed': 130,
+                    'Front': 'mewfront.png', 'Back': 'mewback.png'},
             'Gengar': {'Type': ['Ghost', 'Poison'], 'HP': 60, 'Moves': ['Lick',
-                    'Shadow Punch'], 'Speed': 110},
+                    'Shadow Punch'], 'Speed': 110,
+                    'Front': 'gengarfront.png', 'Back': 'gengarback.png'},
             'Eevee': {'Type': ['Normal'], 'HP': 55, 'Moves': ['Covet',
-                      'Sand Attack', 'Quick Attack'], 'Speed': 55},
+                      'Sand Attack', 'Quick Attack'], 'Speed': 55,
+                      'Front': 'eeveefront.png', 'Back': 'eeveeback.png'},
             'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25,
-                          'Moves': [ 'Tackle', 'Thunder Shock'], 'Speed': 45},
+                          'Moves': [ 'Tackle', 'Thunder Shock'], 'Speed': 45,
+                          'Front': 'magfront.png', 'Back': 'magback.png'},
             'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45,
                           'Moves': ['Tackle', 'Vine Whip', 'Razor Leaf'],
-                          'Speed': 45},
+                          'Speed': 45, 'Front': 'bulfront.png',
+                          'Back': 'bulback.png'},
             'Charmander': {'Type': ['Fire'], 'HP': 39, 'Moves': ['Scratch',
-                           'Ember', 'Fire Spin'], 'Speed': 65},
+                           'Ember', 'Fire Spin'], 'Speed': 65,
+                           'Front': 'charfront.png', 'Back': 'charback.png'},
             'Deoxys': {'Type': ['Psychic'], 'HP': 50, 'Moves':['Wrap','Pursuit',
-                       'Knock Off'], 'Speed': 150},
+                       'Knock Off'], 'Speed': 150,
+                       'Front': 'deofront.png', 'Back': 'deoback.png'},
             'Golem': {'Type': ['Rock', 'Ground'], 'HP': 80, 'Moves': [ 'Tackle',
-                    'Rock Throw', 'Mega Punch'], 'Speed': 45},
+                    'Rock Throw', 'Mega Punch'], 'Speed': 45,
+                    'Front': 'golemfront.png', 'Back': 'golemback.png'},
             'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves':['Aqua Jet',
-                        'Ice Shard', 'Headbutt'], 'Speed': 70},
+                        'Ice Shard', 'Headbutt'], 'Speed': 70,
+                        'Front': 'dewfront.png', 'Back': 'dewback.png'},
             'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
-                        'Fairy Wind', 'Struggle Bug'], 'Speed': 84}}
+                        'Fairy Wind', 'Struggle Bug'], 'Speed': 84,
+                        'Front': 'cutiefront.png', 'Back': 'cutieback.png'}}
                 self.name = name
                 self.pokemonList = startPokemon
                 self.type_ = self.pokemonList[name]['Type']
                 self.hp = self.pokemonList[name]['HP']
+                self.oghp = self.pokemonList[name]['HP']
                 self.moves = self.pokemonList[name]['Moves']
                 self.speed = self.pokemonList[name]['Speed']
+                self.frontB = mode.loadImage(self.pokemonList[name]['Front'])
+                self.frontB = self.frontB.resize((100,100))
+                self.frontS = self.frontB.resize((50,50))
+                self.backB = mode.loadImage(self.pokemonList[name]['Back'])
+                self.backB = self.backB.resize((100,100))
+                self.backS = self.backB.resize((50,50))
+                
+            
+
 
             def damage(self, move, level, opponent_type):
                 # Calculate damage based on the move and opponent type
@@ -611,23 +643,25 @@ class BattleMode(Mode):
                 # apply the formula to calculate the total damage
                 damage = (movesPower[move] * 0.1 * d_modifier) + (level*4)
                 return damage
-
+        
+        
         # Provide all the available pokemons 
-        #ask_p_pkm = (f'Your character choices are'
-                     #f'{mode.player.characterList([])}. Which character would'
-                     #f'you like?')
-        #character = mode.getUserInput(ask_p_pkm).title()
-        character = input(f'Your character choices are'
+        ask_p_pkm = (f'Your character choices are '
                      f'{mode.player.characterList([])}. Which character would'
-                     f' you like?').title()
+                     f'you like?')
+        character = mode.getUserInput(ask_p_pkm).title()
+        #character = input(f'Your character choices are'
+                     #f'{mode.player.characterList([])}. Which character would'
+                     #f' you like?').title()
 
         # Check whether the name entered is correct
         while character not in mode.player.characterList([]):
-            character = input(f'Your character choices are'
-                     f'{mode.player.characterList([])}. Which character would'
-                     f' you like?').title()
+            askAgainMsg = (f'Your character choices are'
+                           f'{mode.player.characterList([])}. Which '
+                           f'character would you like?')
+            character = mode.getUserInput(askAgainMsg).title()
         # Initializes the player's pokémon
-        p_pkm = Pokemon(character)
+        mode.p_pkm = Pokemon(character)
 
         # Opponent pokemons based on player's level
         opponentL1 = ['Magnemite', 'Pikachu', 'Charmander', 'Cutiefly',
@@ -638,25 +672,26 @@ class BattleMode(Mode):
         # Opponent randomly chooses a pokemon character based on player's level
         # Initialize computer's pokemon
         if mode.player.level == 1:
-            levelChoice = rand.choices(population=[opponentL1, opponentL2,
+            levelChoice = random.choices(population=[opponentL1, opponentL2,
                                        opponentL3], weights=[0.6,0.3,0.1])
             for choices in levelChoice:
-                comp_character = rand.choice(choices)
+                comp_character = random.choice(choices)
         elif mode.player.level == 2:
-            levelChoice = rand.choices(population=[opponentL1, opponentL2,
+            levelChoice = random.choices(population=[opponentL1, opponentL2,
                                        opponentL3], weights=[0.2,0.6,0.2])
             for choices in levelChoice:
-                comp_character = rand.choice(choices)
+                comp_character = random.choice(choices)
         elif mode.player.level == 3:
-            levelChoice = rand.choices(population=[opponentL1, opponentL2,
+            levelChoice = random.choices(population=[opponentL1, opponentL2,
                                        opponentL3], weights=[0.1,0.3,0.6])
             for choices in levelChoice:
-                comp_character = rand.choice(choices)
+                comp_character = random.choice(choices)
         print(f'Your opponent has chosen a {comp_character}.')
-        o_pkm = Pokemon(comp_character)
+        mode.o_pkm = Pokemon(comp_character)
+
 
         # Determines the starter based on speed
-        if p_pkm.speed >= o_pkm.speed:
+        if mode.p_pkm.speed >= mode.o_pkm.speed:
             counter = 2
             print('Player starts!')
         else:
@@ -668,7 +703,7 @@ class BattleMode(Mode):
         # from the list generated from mode.best_move
         highest = 0
         effectivity = []
-        for key in mode.best_move(o_pkm, p_pkm).keys():
+        for key in mode.best_move(mode.o_pkm, mode.p_pkm).keys():
             effectivity.append(key)
             if key > highest:
                 highest = key
@@ -679,26 +714,34 @@ class BattleMode(Mode):
                           "move against your opponent? yes/no ")
         if sacrifice == "yes":
             p_pkm.hp = 0.9 * p_pkm.hp
-            print('Your best move is', mode.move_help(p_pkm, o_pkm)[-1])
+            print('Your best move is', mode.move_help(p_pkm, mode.o_pkm)[-1])
             print("Your current hp: ", p_pkm.hp)
         '''
 
         # Attacking starts, alternating between the two
-        while (p_pkm.hp > 0 and o_pkm.hp > 0):
+        while (mode.p_pkm.hp > 0 and mode.o_pkm.hp > 0):
             if counter % 2 == 0:
-                print('\nYour turn:')
-                print(f'The moves avaliable are {p_pkm.moves}')
+                #print('\nYour turn:')
+                #moveAskMsg = (f'The moves avaliable are {mode.p_pkm.moves}'
+                              #f'Which move would you like? ')
+                #move = mode.getUserInput(moveAskMsg).title()
+                print(f'The moves avaliable are {mode.p_pkm.moves}')
                 move = input('Which move would you like? ').title()
+                
 
                 # Ensures that player only picks a move in the list
-                while move not in p_pkm.moves:
+                while move not in mode.p_pkm.moves:
                     print(('You did not input a possible move. '
                           'Please try again.'))
                     move = input('Which move would you like ').title()
 
+                #
+
                 # Calculate damage and substract it from other's HP
-                o_pkm.hp -= p_pkm.damage(move, mode.player.level, o_pkm.type_)
-                print(f"Your HP: {p_pkm.hp:.2f} Opponent's HP: {o_pkm.hp:.2f}")
+                mode.o_pkm.hp -= mode.p_pkm.damage(move, mode.player.level,
+                                                   mode.o_pkm.type_)
+                print(f"Your HP: {mode.p_pkm.hp:.2f} Opponent's HP: "
+                      f"{mode.o_pkm.hp:.2f}")
 
             else:
                 print("\nOpponent's turn: ")
@@ -706,31 +749,31 @@ class BattleMode(Mode):
                 # Computer chooses a move based on player's level
                 # When calculating damage, the computer always uses 
                 # player's level to ensure they are evenly matched
-                print("bestmove list:", mode.best_move(o_pkm, p_pkm))
+                print("bestmove list:", mode.best_move(mode.o_pkm, mode.p_pkm))
                 if mode.player.level == 3:
-                    p_pkm.hp -= o_pkm.damage(rand.choice(mode.best_move(o_pkm,
-                                             p_pkm)[highest]),mode.player.level,
-                                             p_pkm.type_)
+                    mode.p_pkm.hp -= mode.o_pkm.damage(random.choice(mode.best_move(mode.o_pkm,
+                                             mode.p_pkm)[highest]),mode.player.level,
+                                             mode.p_pkm.type_)
                 elif mode.player.level == 2:
-                    move = rand.choice(mode.best_move(o_pkm,
-                                                      p_pkm)[effectivity[-2]])
-                    p_pkm.hp -= o_pkm.damage(move,mode.player.level,p_pkm.type_)
+                    move = random.choice(mode.best_move(mode.o_pkm,
+                                                      mode.p_pkm)[effectivity[-2]])
+                    mode.p_pkm.hp -= mode.o_pkm.damage(move,mode.player.level,mode.p_pkm.type_)
                 elif mode.player.level == 1:
-                    move = rand.choice(mode.best_move(o_pkm,
-                                                      p_pkm)[effectivity[-1]])
-                    p_pkm.hp -= o_pkm.damage(move,mode.player.level,p_pkm.type_)
+                    move = random.choice(mode.best_move(mode.o_pkm,
+                                                      mode.p_pkm)[effectivity[-1]])
+                    mode.p_pkm.hp -= mode.o_pkm.damage(move,mode.player.level,mode.p_pkm.type_)
 
-                print(f"Your HP: {p_pkm.hp:.2f} Opponent's HP: {o_pkm.hp:.2f}")
+                print(f"Your HP: {mode.p_pkm.hp:.2f} Opponent's HP: {mode.o_pkm.hp:.2f}")
 
             counter += 1
 
         # returns a tuple stating the winner of the game.
         # In the case that the player wins, the program returns
         # the computer pokémon's name and experience points
-        if p_pkm.hp >= o_pkm.hp:
+        if mode.p_pkm.hp >= mode.o_pkm.hp:
             print('Player wins!!')
             mode.player.exp += 10
-        elif o_pkm.hp > p_pkm.hp:
+        elif mode.o_pkm.hp > mode.p_pkm.hp:
             print('Computer wins!!')
             if mode.player.exp >= 5:
                 mode.player.exp -= 5
@@ -741,6 +784,21 @@ class BattleMode(Mode):
         canvas.create_image(mode.width/2, mode.height/2,
                             image=ImageTk.PhotoImage(mode.scalePic))
 
+        # Draw pokemon's HP bar
+        canvas.create_text(77,30, text = mode.p_pkm.hp, fill = '#D63031')
+        canvas.create_rectangle(60, 40, 60+(mode.p_pkm.hp/mode.p_pkm.oghp)*150,
+                                55, fill = '#D63031', outline = '#E84342')
+        canvas.create_image(30,47.5,image=ImageTk.PhotoImage(mode.p_pkm.frontS))
+
+        canvas.create_text(525,30, text = mode.o_pkm.hp, fill = '#D63031')
+        substract = mode.o_pkm.oghp - mode.o_pkm.hp
+        canvas.create_rectangle(390+(substract/mode.p_pkm.oghp)*150, 40, 540,
+                                55, fill = '#D63031', outline = '#E84342')
+        canvas.create_image(570,47.5,image=ImageTk.PhotoImage(mode.o_pkm.frontS))
+
+        # Draw Pokemon
+        canvas.create_image(450,180,image=ImageTk.PhotoImage(mode.o_pkm.frontB))
+        canvas.create_image(225,340,image=ImageTk.PhotoImage(mode.p_pkm.backB))
 
 
 class HelpMode(Mode):
@@ -752,7 +810,7 @@ class MyModalApp(ModalApp):
         app.gameMode = GameMode()
         app.helpMode = HelpMode()
         app.battleMode = BattleMode()
-        app.setActiveMode(app.splashScreenMode)
+        app.setActiveMode(app.battleMode)
         app.timerDelay = 50
 
 app = MyModalApp(width=600, height=400)
