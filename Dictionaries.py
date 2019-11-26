@@ -333,3 +333,6 @@ movesDict = {
                     'super effective against': ['Grass', 'Psychic', 'Dark'],
                     'not very effective against': ['Fire', 'Fighting',
                     'Poison', 'Flying', 'Ghost', 'Steel', 'Fairy']}}
+
+
+

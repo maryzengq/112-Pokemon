@@ -1,58 +1,81 @@
+# Copied from: http://www.cs.cmu.edu/~112/notes/hw9.html
 from cmu_112_graphics import *
 from tkinter import *
 from PIL import Image 
 import random 
+from levelmoves import addMoves
 
+# Got Pokemon info from https://pokemondb.net/pokedex/squirtle
 class Pokemon(object):
-    def __init__(self, name):
-        startPokemon = {
-    'Pikachu': {'Type': ['Electric'], 'HP': 35, 'Moves': ['Nuzzle', 
-                'Quick Attack', 'Thunder Shock'], 'Speed': 90,
-                'Front': 'pikachufront.png', 'Back': 'pikachuback.png'},
-    'Charizard': {'Type': ['Fire', 'Flying'], 'HP': 78, 'Moves':
-                    ['Air Slash', 'Ember', 'Scratch'], 'Speed': 100,
-                    'Front': 'charifront.png', 'Back': 'chariback.png'},
-    'Squirtle': {'Type': ['Water'], 'HP': 44, 'Moves': ['Tackle',
-                    'Water Gun', 'Bite'], 'Speed': 43},
-    'Mewtwo': {'Type': ['Psychic'], 'HP': 106, 'Moves': ['Confusion',
-            'Ancient Power', 'Psycho Cut'], 'Speed': 130},
-    'Gengar': {'Type': ['Ghost', 'Poison'], 'HP': 60, 'Moves': ['Lick',
-            'Shadow Punch'], 'Speed': 110},
-    'Eevee': {'Type': ['Normal'], 'HP': 55, 'Moves': ['Covet',
-                'Sand Attack', 'Quick Attack'], 'Speed': 55},
-    'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25,
-                    'Moves': [ 'Tackle', 'Thunder Shock'], 'Speed': 45},
-    'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45,
-                    'Moves': ['Tackle', 'Vine Whip', 'Razor Leaf'],
-                    'Speed': 45},
-    'Charmander': {'Type': ['Fire'], 'HP': 39, 'Moves': ['Scratch',
-                    'Ember', 'Fire Spin'], 'Speed': 65},
-    'Deoxys': {'Type': ['Psychic'], 'HP': 50, 'Moves':['Wrap','Pursuit',
-                'Knock Off'], 'Speed': 150},
-    'Golem': {'Type': ['Rock', 'Ground'], 'HP': 80, 'Moves': [ 'Tackle',
-            'Rock Throw', 'Mega Punch'], 'Speed': 45},
-    'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves':['Aqua Jet',
-                'Ice Shard', 'Headbutt'], 'Speed': 70},
-    'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
-                'Fairy Wind', 'Struggle Bug'], 'Speed': 84}}
+    startPokemon = {
+            'Pikachu': {'Type': ['Electric'], 'HP': 35, 'Moves': ['Nuzzle', 
+                        'Quick Attack', 'Thunder Shock'], 'Speed': 90,
+                        'Front': 'pikachufront.png', 'Back': 'pikachuback.png'},
+            'Charizard': {'Type': ['Fire', 'Flying'], 'HP': 78, 'Moves':
+                            ['Air Slash', 'Ember', 'Scratch'], 'Speed': 100,
+                            'Front': 'charifront.png', 'Back': 'chariback.png'},
+            'Squirtle': {'Type': ['Water'], 'HP': 44, 'Moves': ['Tackle',
+                         'Water Gun', 'Bite'], 'Speed': 43,
+                         'Front': 'squirfront.png', 'Back': 'squirback.png'},
+            'Mewtwo': {'Type': ['Psychic'], 'HP': 106, 'Moves': ['Confusion',
+                    'Ancient Power', 'Psycho Cut'], 'Speed': 130,
+                    'Front': 'mewfront.png', 'Back': 'mewback.png'},
+            'Gengar': {'Type': ['Ghost', 'Poison'], 'HP': 60, 'Moves': ['Lick',
+                    'Shadow Punch'], 'Speed': 110,
+                    'Front': 'gengarfront.png', 'Back': 'gengarback.png'},
+            'Eevee': {'Type': ['Normal'], 'HP': 55, 'Moves': ['Covet',
+                      'Sand Attack', 'Quick Attack'], 'Speed': 55,
+                      'Front': 'eeveefront.png', 'Back': 'eeveeback.png'},
+            'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25,
+                          'Moves': [ 'Tackle', 'Thunder Shock'], 'Speed': 45,
+                          'Front': 'magfront.png', 'Back': 'magback.png'},
+            'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45,
+                          'Moves': ['Tackle', 'Vine Whip', 'Razor Leaf'],
+                          'Speed': 45, 'Front': 'bulfront.png',
+                          'Back': 'bulback.png'},
+            'Charmander': {'Type': ['Fire'], 'HP': 39, 'Moves': ['Scratch',
+                           'Ember', 'Fire Spin'], 'Speed': 65,
+                           'Front': 'charfront.png', 'Back': 'charback.png'},
+            'Deoxys': {'Type': ['Psychic'], 'HP': 50, 'Moves':['Wrap','Pursuit',
+                       'Knock Off'], 'Speed': 150,
+                       'Front': 'deofront.png', 'Back': 'deoback.png'},
+            'Golem': {'Type': ['Rock', 'Ground'], 'HP': 80, 'Moves': [ 'Tackle',
+                    'Rock Throw', 'Mega Punch'], 'Speed': 45,
+                    'Front': 'golemfront.png', 'Back': 'golemback.png'},
+            'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves':['Aqua Jet',
+                        'Ice Shard', 'Headbutt'], 'Speed': 70,
+                        'Front': 'dewfront.png', 'Back': 'dewback.png'},
+            'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
+                        'Fairy Wind', 'Struggle Bug'], 'Speed': 84,
+                        'Front': 'cutiefront.png', 'Back': 'cutieback.png'}}
+    
+    def __init__(self, name, level, app):
         self.name = name
-        self.pokemonList = startPokemon
+        self.app = app
+        self.level = level
+        self.pokemonList = Pokemon.startPokemon
         self.type_ = self.pokemonList[name]['Type']
         self.hp = self.pokemonList[name]['HP']
-        self.moves = self.pokemonList[name]['Moves']
+        self.oghp = self.pokemonList[name]['HP']
+        self.moves = set(self.pokemonList[name]['Moves'])
         self.speed = self.pokemonList[name]['Speed']
-        self.front = mode.loadImage(self.pokemonList[name]['Front'])
-        self.front = self.front.resize((100,100))
-        self.back = mode.loadImage(self.pokemonList[name]['Back'])
-        self.back = self.back.resize((100,100))
-        
-        for item in startPokemon.keys():
-            item['Front'] = f'{item.name}front.png'
-            item['Back'] = f'{item.name}back.png'        
+        self.frontB = self.app.loadImage(self.pokemonList[name]['Front'])
+        self.frontB = self.frontB.resize((100,100))
+        self.frontS = self.frontB.resize((50,50))
+        self.backB = self.app.loadImage(self.pokemonList[name]['Back'])
+        self.backB = self.backB.resize((100,100))
+        self.backS = self.backB.resize((50,50))
+        self.pkmX = 0
+        self.pkmY = 0
+        self.changeMoves()
+                
 
     def damage(self, move, level, opponent_type):
         # Calculate damage based on the move and opponent type
         
+        # Info about effectiveness collected from 
+        # https://strategywiki.org/wiki/Pok%C3%A9mon_FireRed_and_LeafGreen/
+        # Types_%26_Stats
         superEffective = {
         "Normal": ["N/A"],
         "Fire": ["Grass", "Ice", "Bug", "Steel"],
@@ -93,6 +116,7 @@ class Pokemon(object):
         "Fairy": ["Fire", "Poison", "Steel"]
                         }
 
+        # Got move types from https://pokemondb.net/pokedex/squirtle
         moves = {
         "Normal": ['Quick Attack', 'Slam', 'Scratch', 'Slash',
                     'Tackle', 'Skull Bash', 'Covet', 'Take Down',
@@ -198,11 +222,14 @@ class Pokemon(object):
         # apply the formula to calculate the total damage
         damage = (movesPower[move] * 0.1 * d_modifier) + (level*4)
         return damage
-    
-    def drawFront(self, canvas):
-        canvas.create_image(450, 180,
-                            image=ImageTk.PhotoImage(self.front))
-    
-    def drawBack(self, canvas):
-        canvas.create_image(225, 340,
-                            image=ImageTk.PhotoImage(self.back))
+
+
+    def changeMoves(self):
+        if self.level == 1:
+            self.moves = self.moves
+        elif self.level == 2:
+            self.moves.add(addMoves[self.name][2])
+        elif self.level == 3:
+            self.moves.add(addMoves[self.name][2])
+            self.moves.add(addMoves[self.name][3])
+

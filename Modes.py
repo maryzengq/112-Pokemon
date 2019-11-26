@@ -1,29 +1,35 @@
+# Copied from: http://www.cs.cmu.edu/~112/notes/hw9.html
 from cmu_112_graphics import *
 from tkinter import *
 from PIL import Image 
 import random 
 from pokemonclass import Pokemon
+from movesSpritesClass import MovesSprites
+from levelmoves import addMoves
 
 class Player(object):
+    add = addMoves
     def __init__(self, exp):
         self.exp = exp
-        # keeps track of player's exp points
         self.level = self.updateLevel()
+        # Player's starting character list
+        self.charList = set(['Bulbasaur', 'Charmander', 'Squirtle'])
 
     def updateLevel(self):
-        # Update player's level based on its exp
-        if 0 <= self.exp < 50:
+        # Calculate player's level based on its exp 
+        if 0 <= self.exp < 10:
             self.level = 1
-        elif 50 <= self.exp <= 100:
+        elif 10 <= self.exp <= 20:
             self.level = 2
-        else:
+        elif self.exp > 20:
             self.level = 3
         return self.level
 
-    def characterList(self, defeated):
-        # Returns the character list the player can choose from
-        return set(['Bulbasaur', 'Charmander', 'Squirtle'] + defeated)
 
+    def updateCharList(self, defeated):
+        # Update available characters, adding defeated pokemon
+        return self.charList.add(defeated)
+        
 
 class SplashScreenMode(Mode):
     def appStarted(mode):
@@ -44,6 +50,7 @@ class SplashScreenMode(Mode):
                            font='Georgia 30 bold')
 
 class GameMode(Mode):
+    player = Player(0)
     def appStarted(mode):
         mode.startpic = mode.app.loadImage('gamemap.png')
         mode.scalePic = mode.app.scaleImage(mode.startpic, 3)
@@ -59,16 +66,69 @@ class GameMode(Mode):
         mode.mapTopEnd = mode.height//2 - mode.mapHeight//2
         mode.mapDownEnd = mode.height//2 + mode.mapHeight//2
 
+        # Store player position relatively to the map
         mode.mapPlayerX = mode.mapLeftEnd + mode.mapWidth/2
         mode.mapPlayerY = mode.mapTopEnd + mode.mapHeight/2
         
-        mode.c_pkmList = [(random.randint(mode.mapLeftEnd + mode.scrollMargin,
-                                          mode.mapRightEnd - mode.scrollMargin),
-                           random.randint(mode.mapTopEnd + mode.scrollMargin,
-                                          mode.mapDownEnd - mode.scrollMargin)) 
-                           for _ in range(3)]
+        # Generate random wild pokemon on the map
+        mode.wildPic = mode.app.loadImage('egg.png')
+        mode.wildList = []
+        mode.dropWildPokemon()
+
+        mode.right, mode.left, mode.up, mode.down = False, False, False, False
+        mode.loadSprites()
+    
+    def dropWildPokemon(mode):
+        # Drop random, wild pokemon
+        '''
+        for i in range(3):
+            wildX = random.randint(mode.mapLeftEnd + mode.scrollMargin,
+                                   mode.mapRightEnd - mode.scrollMargin)
+            wildY = random.randint(mode.mapTopEnd + mode.scrollMargin,
+                                   mode.mapDownEnd - mode.scrollMargin)
+            mode.wildList.append((wildX, wildY))
+        '''
+        for i in range(3):
+            wildX = random.randint(200,300)
+            wildY = random.randint(200,300)
+            mode.wildList.append((wildX, wildY))
+        
+  
+    def loadSprites(mode):
+        # Codes modied from 
+        # http://www.cs.cmu.edu/~112/notes/notes-animations-part2.html#ioMethods
+
+        # Load player's sprites for going in all four directions
+        spriteUp = mode.app.loadImage('up.png')
+        mode.spritesUp = [ ]
+        for i in range(4):
+            sprite = spriteUp.crop((64*i, 0, 64*(i+1), 64))
+            mode.spritesUp.append(sprite)
+        
+        spriteDown = mode.app.loadImage('down.png')
+        mode.spritesDown = [ ]
+        for i in range(4):
+            sprite = spriteDown.crop((64*i, 0, 64*(i+1), 64))
+            mode.spritesDown.append(sprite)
+
+        spriteLeft = mode.app.loadImage('left.png')
+        mode.spritesLeft = [ ]
+        for i in range(4):
+            sprite = spriteLeft.crop((64*i, 0, 64*(i+1), 64))
+            mode.spritesLeft.append(sprite)
+        
+        spriteRight = mode.app.loadImage('right.png')
+        mode.spritesRight = [ ]
+        for i in range(4):
+            sprite = spriteRight.crop((64*i, 0, 64*(i+1), 64))
+            mode.spritesRight.append(sprite)
+
+        mode.spriteCounter = 0
     
     def makePlayerVisible(mode):
+        # Codes modied from 
+        # http://www.cs.cmu.edu/~112/notes/notes-animations-part2.html
+        
         # scroll to make player visible as needed
         if (mode.playerX < mode.scrollX + mode.scrollMargin):
             mode.scrollX = mode.playerX - mode.scrollMargin
@@ -107,261 +167,322 @@ class GameMode(Mode):
 
     def meetOpponent(mode, cx, cy):
         # Check if the player is facing an opponent
-        for (pkmX, pkmY) in mode.c_pkmList:
-            if (((pkmX - 2*mode.r) <= cx <= (pkmX + 2*mode.r)) and
-               ((pkmY - 2*mode.r) <= cy <= (pkmY + 2*mode.r))):
-               mode.app.setActiveMode(mode.app.battleMode)
+        for (x,y) in mode.wildList:
+            if (((x - 20) <= cx <= (x + 20)) and
+                ((y - 20) <= cy <= (y + 20))):
+                mode.app.battleMode = BattleMode()
+                mode.app.setActiveMode(mode.app.battleMode)
+                mode.wildList.remove((x,y))
+                # mode.
+                if len(mode.wildList) == 0:
+                    mode.dropWildPokemon()
+
+    def timerFired(mode):
+        mode.spriteCounter = ((1 + mode.spriteCounter) % len(mode.spritesUp))
 
     def keyPressed(mode, event):
         if (event.key == "Left"):
-            mode.movePlayer(-20, 0)
-            mode.mapPlayerX -= 20
+            mode.movePlayer(-10, 0)
+            mode.mapPlayerX -= 10
+            mode.left = True
+            mode.up, mode.down, mode.right = False, False, False
         elif (event.key == "Right"):
-            mode.movePlayer(+20, 0)
-            mode.mapPlayerX += 20
+            mode.movePlayer(+10, 0)
+            mode.mapPlayerX += 10
+            mode.right = True
+            mode.up, mode.down, mode.left = False, False, False
         elif (event.key == 'Up'):
-            mode.movePlayer(0, - 20)
-            mode.mapPlayerY -= 20
+            mode.movePlayer(0, - 10)
+            mode.mapPlayerY -= 10
+            mode.up = True
+            mode.down, mode.left, mode.right = False, False, False
         elif (event.key == 'Down'):
-            mode.movePlayer(0, +20)
-            mode.mapPlayerY += 20
+            mode.movePlayer(0, +10)
+            mode.mapPlayerY += 10
+            mode.down = True
+            mode.up, mode.left, mode.right = False, False, False
+
         mode.meetOpponent(mode.mapPlayerX, mode.mapPlayerY)
 
-    def redrawAll(mode, canvas):
-        cx, cy = mode.playerX, mode.playerY
-        cx -= mode.scrollX
-        cy -= mode.scrollY
+    def drawPlayer(mode, canvas):
+        # Draw players with sprites based on the four directions
+        if ((mode.right == False) and (mode.left == False) and
+            (mode.down == False) and (mode.up == False)):
+            sprite = mode.spritesRight[mode.spriteCounter]
+            cx, cy = mode.playerX, mode.playerY
+            cx -= mode.scrollX
+            cy -= mode.scrollY
+            canvas.create_image(cx, cy, image=ImageTk.PhotoImage(sprite))
+        elif mode.right == True:
+            sprite = mode.spritesRight[mode.spriteCounter]
+            cx, cy = mode.playerX, mode.playerY
+            cx -= mode.scrollX
+            cy -= mode.scrollY
+            canvas.create_image(cx, cy, image=ImageTk.PhotoImage(sprite))
+        elif mode.left == True:
+            sprite = mode.spritesLeft[mode.spriteCounter]
+            cx, cy = mode.playerX, mode.playerY
+            cx -= mode.scrollX
+            cy -= mode.scrollY
+            canvas.create_image(cx, cy, image=ImageTk.PhotoImage(sprite))
+        elif mode.up == True:
+            sprite = mode.spritesUp[mode.spriteCounter]
+            cx, cy = mode.playerX, mode.playerY
+            cx -= mode.scrollX
+            cy -= mode.scrollY
+            canvas.create_image(cx, cy, image=ImageTk.PhotoImage(sprite))
+        elif mode.down == True:
+            sprite = mode.spritesDown[mode.spriteCounter]
+            cx, cy = mode.playerX, mode.playerY
+            cx -= mode.scrollX
+            cy -= mode.scrollY
+            canvas.create_image(cx, cy, image=ImageTk.PhotoImage(sprite))
 
+    def redrawAll(mode, canvas):
         # Draw the map
         canvas.create_image(mode.width/2 - mode.scrollX,
                             mode.height/2 - mode.scrollY,
                             image=ImageTk.PhotoImage(mode.scalePic))
         # Draw the player
-        canvas.create_oval(cx-mode.r, cy-mode.r, cx+mode.r, cy+mode.r,
-                           fill='lightblue')
+        mode.drawPlayer(canvas)
 
-        # Draw the c_pkm, shifted by the scrollX offset
-        for (pkmX, pkmY) in mode.c_pkmList:
-            pkmX -= mode.scrollX  
-            pkmY -= mode.scrollY
-            canvas.create_oval(pkmX-mode.r, pkmY-mode.r,pkmX+mode.r,pkmY+mode.r, 
-                               fill='lightGreen')
+        # Draw the compPkm, shifted by the scrollX offset
+        for (x, y) in mode.wildList:
+            x -= mode.scrollX  
+            y -= mode.scrollY
+            canvas.create_image(x, y, image=ImageTk.PhotoImage(mode.wildPic))
 
 class BattleMode(Mode):
     def appStarted(mode):
         #mode.loadProgress
         mode.pic = mode.app.loadImage('bi.png')
         mode.scalePic = mode.app.scaleImage(mode.pic, 4/3)
-        mode.player = Player(0)
-        mode.startAsking = False
-        mode.changeStartAsking()
-        mode.battle()
-        mode.p_pkm = 'player'
-        mode.o_okm = 'opponent'
-    
-    def changeStartAsking(mode):
-        mode.startAsking = True
-        mode.battle()
+        mode.player = GameMode.player
+        mode.playerPKM = Pokemon('Squirtle', mode.player.level, mode)
+        mode.compPKM = Pokemon('Squirtle', mode.player.level, mode)
 
-    
-    def best_move(mode, computer, player):
+        mode.playerTurn = False
+        mode.battleOver = False
+
+        # Initialize all the necesary booleans
+        mode.playerMove = MovesSprites('Nuzzle', mode)
+        mode.playerDoneMoving = False
+        mode.playerDone = False
+        mode.drawPlayerMove = False
+        mode.displayPlayerDamage = False
+        mode.actuallyRunPlayerMove = False
+        mode.damageOnPlayer = 0
+
+        mode.compMove = MovesSprites('Nuzzle', mode)
+        mode.compDoneMoving = False
+        mode.compDone = False
+        mode.drawCompMove = False
+        mode.displayCompDamage = False
+        mode.actuallyRunCompMove = False
+        mode.damageOnComp = 0
+
+        mode.drawWinner = False
+        mode.winnter = 'noone'
+        mode.decideWinnter = True
+        mode.initiatePokemon()
+
+    def moveEffective(mode, computer, player):
+        # Got Pokemon info from https://pokemondb.net/pokedex/squirtle
+
+        # Return a dictionary of moves and their effectiveness (0.5, 1, 2)
         movesDict = {
         'Nuzzle': {'name': 'Nuzzle', 'power': 20, 'type': 'Electric', 
-                'super effective against': ["Water", "Flying"], 
-                'not very effective against': ["Electric", "Grass", "Dragon"]},
+                'effective': ["Water", "Flying"], 
+                'not effective': ["Electric", "Grass", "Dragon"]},
         'Quick Attack': {'name': 'Quick Attack', 'power': 40, 'type': 'Normal', 
-                        'super effective against': ["N/A"], 
-                        'not very effective against': ["Rock", "Steel"]},
+                        'effective': ["N/A"], 
+                        'not effective': ["Rock", "Steel"]},
         'Thunder Shock': {'name': 'Thunder Shock', 'power': 40, 'type': 'Electric',
-                        'super effective against': ['Water', 'Flying'],
-                        'not very effective against': ['Electric', 'Grass',
+                        'effective': ['Water', 'Flying'],
+                        'not effective': ['Electric', 'Grass',
                         'Dragon']}, 
         'Spark': {'name': 'Spark', 'power': 65, 'type': 'Electric',
-                'super effective against': ['Water', 'Flying'],
-                'not very effective against': ['Electric', 'Grass',
+                'effective': ['Water', 'Flying'],
+                'not effective': ['Electric', 'Grass',
                 'Dragon']},
         'Slam': {'name': 'Slam', 'power': 80, 'type': 'Normal',
-                'super effective against': ["N/A"], 
-                'not very effective against': ["Rock", "Steel"]},
+                'effective': ["N/A"], 
+                'not effective': ["Rock", "Steel"]},
         'Ember': {'name': 'Ember', 'power': 40, 'type': 'Fire',
-                'super effective against': ['Grass', 'Ice', 'Bug', 'Steel'],
-                'not very effective against': ['Fire', 'Water', 'Rock',
+                'effective': ['Grass', 'Ice', 'Bug', 'Steel'],
+                'not effective': ['Fire', 'Water', 'Rock',
                 'Dragon']}, 
         'Scratch': {'name': 'Scratch', 'power': 40,'type': 'Normal',
-                    'super effective against': ['N/A'],
-                    'not very effective against': ['Rock', 'Steel']}, 
+                    'effective': ['N/A'],
+                    'not effective': ['Rock', 'Steel']}, 
         'Air Slash': {'name': 'Air Slash', 'power': 75, 'type': 'Flying',
-                    'super effective against': ["Grass", "Fighting", "Bug"],
-                    'not very effective against': ["Electric", "Rock","Steel"]},
+                    'effective': ["Grass", "Fighting", "Bug"],
+                    'not effective': ["Electric", "Rock","Steel"]},
         'Slash': {'name': 'Slash', 'power': 70, 'type': 'Normal',
-                'super effective against': ["N/A"], 
-                'not very effective against': ["Rock", "Steel"]},
+                'effective': ["N/A"], 
+                'not effective': ["Rock", "Steel"]},
         'Flare Blitz': {'name': 'Flare Blitz', 'power': 120, 'type': 'Fire',
-                        'super effective against': ['Grass', 'Ice', 'Bug', 'Steel'],
-                        'not very effective against': ['Fire', 'Water', 'Rock',
+                        'effective': ['Grass', 'Ice', 'Bug', 'Steel'],
+                        'not effective': ['Fire', 'Water', 'Rock',
                         'Dragon']},
         'Tackle': {'name': 'Tackle', 'power': 40, 'type': 'Normal', 
-                'super effective against': ['N/A'], 
-                'not very effective against': ['Rock', 'Steel']}, 
+                'effective': ['N/A'], 
+                'not effective': ['Rock', 'Steel']}, 
         'Water Gun': {'name': 'Water Gun', 'power': 40, 'type': 'Water', 
-                    'super effective against': ["Fire", "Ground", "Rock"], 
-                    'not very effective against': ["Water", "Grass", "Dragon"]},    
+                    'effective': ["Fire", "Ground", "Rock"], 
+                    'not effective': ["Water", "Grass", "Dragon"]},    
         'Bite': {'name': 'Bite', 'power': 60, 'type': 'Dark',
-                'super effective against': ['Psychic', 'Ghost'],
-                'not very effective against': ['Fighting', 'Dark', 'Fairy']}, 
+                'effective': ['Psychic', 'Ghost'],
+                'not effective': ['Fighting', 'Dark', 'Fairy']}, 
         'Aqua Tail': {'name': 'Aqua Tail', 'power': 90, 'type': 'Water', 
-                    'super effective against': ["Fire", "Ground", "Rock"], 
-                    'not very effective against': ["Water", "Grass", "Dragon"]}, 
+                    'effective': ["Fire", "Ground", "Rock"], 
+                    'not effective': ["Water", "Grass", "Dragon"]}, 
         'Skull Bash': {'name': 'Skull Bash', 'power': 130, 'type': 'Normal', 
-                    'super effective against': ['N/A'], 
-                    'not very effective against': ['Rock', 'Steel']},
+                    'effective': ['N/A'], 
+                    'not effective': ['Rock', 'Steel']},
         'Confusion': {'name': 'Confusion', 'power': 50, 'type': 'Psychic',
-                    'super effective against': ['Fighting', 'Poison'],
-                    'not very effective against': ['Psychic', 'Steel']},
+                    'effective': ['Fighting', 'Poison'],
+                    'not effective': ['Psychic', 'Steel']},
         'Ancient Power': {'name': 'Ancient Power', 'power': 60, 'type': 'Rock',
-                        'super effective against': ['Fire','Ice','Flying','Bug'],
-                        'not very effective against': ['Fighting', 'Ground',
+                        'effective': ['Fire','Ice','Flying','Bug'],
+                        'not effective': ['Fighting', 'Ground',
                         'Steel']}, 
         'Psycho Cut': {'name': 'Psycho Cut', 'power': 70, 'type': 'Psychic',
-                    'super effective against': ['Fighting', 'Poison'],
-                    'not very effective against': ['Psychic', 'Steel']},
+                    'effective': ['Fighting', 'Poison'],
+                    'not effective': ['Psychic', 'Steel']},
         'Psystrike': {'name': 'Psystrike', 'power': 100, 'type': 'Psychic',
-                    'super effective against': ['Fighting', 'Poison'],
-                    'not very effective against': ['Psychic', 'Steel']},
+                    'effective': ['Fighting', 'Poison'],
+                    'not effective': ['Psychic', 'Steel']},
         'Future Sight': {'name': 'Future Sight', 'power': 120, 'type': 'Psychic',
-                        'super effective against': ['Fighting', 'Poison'],
-                        'not very effective against': ['Psychic', 'Steel']},
+                        'effective': ['Fighting', 'Poison'],
+                        'not effective': ['Psychic', 'Steel']},
         'Lick': {'name': 'Lick', 'power': 30, 'type': 'Ghost',
-                'super effective against': ['Psychic', 'Ghost'],
-                'not very effective against': ['Dark']}, 
+                'effective': ['Psychic', 'Ghost'],
+                'not effective': ['Dark']}, 
         'Shadow Punch': {'name': 'Shadow Punch', 'power': 60, 'type': 'Ghost',
-                        'super effective against': ['Psychic', 'Ghost'],
-                        'not very effective against': ['Dark']},
+                        'effective': ['Psychic', 'Ghost'],
+                        'not effective': ['Dark']},
         'Sucker Punch': {'name': 'Sucker Punch', 'power': 70, 'type': 'Dark',
-                        'super effective against': ['Psychic', 'Ghost'],
-                        'not very effective against': ['Fighting', 'Dark',
+                        'effective': ['Psychic', 'Ghost'],
+                        'not effective': ['Fighting', 'Dark',
                         'Fairy']}, 
         'Dream Eater': {'name': 'Dream Eater', 'power': 100, 'type': 'Psychic',
-                        'super effective against': ['Fighting', 'Poison'],
-                        'not very effective against': ['Psychic', 'Steel']},
+                        'effective': ['Fighting', 'Poison'],
+                        'not effective': ['Psychic', 'Steel']},
         'Covet': {'name': 'Covet', 'power': 60, 'type': 'Normal', 
-                'super effective against': ['N/A'], 
-                'not very effective against': ['Rock', 'Steel']},
+                'effective': ['N/A'], 
+                'not effective': ['Rock', 'Steel']},
         'Sand Attack': {'name': 'Sand Attack', 'power': 55, 'type': 'Ground',
-                        'super effective against': ['Fire', 'Electric', 'Poison',
+                        'effective': ['Fire', 'Electric', 'Poison',
                         'Rock', 'Steel'],
-                        'not very effective against': ['Grass', 'Bug']}, 
+                        'not effective': ['Grass', 'Bug']}, 
         'Take Down': {'name': 'Take Down', 'power': 90, 'type': 'Normal', 
-                    'super effective against': ['N/A'], 
-                    'not very effective against': ['Rock', 'Steel']},
+                    'effective': ['N/A'], 
+                    'not effective': ['Rock', 'Steel']},
         'Last Resort': {'name': 'Last Resort', 'power': 140, 'type': 'Normal', 
-                        'super effective against': ['N/A'], 
-                        'not very effective against': ['Rock','Steel']},
+                        'effective': ['N/A'], 
+                        'not effective': ['Rock','Steel']},
         'Thunderbolt': {'name': 'Thunderbolt', 'power': 90, 'type': 'Electric',
-                        'super effective against': ['Water', 'Flying'],
-                        'not very effective against': ['Electric','Grass',
+                        'effective': ['Water', 'Flying'],
+                        'not effective': ['Electric','Grass',
                         'Dragon']}, 
         'Flash Cannon': {'name': 'Flash Cannon', 'power': 80, 'type': 'Steel',
-                        'super effective against': ['Ice', 'Rock', 'Fairy'],
-                        'not very effective against': ['Fire', 'Water',
+                        'effective': ['Ice', 'Rock', 'Fairy'],
+                        'not effective': ['Fire', 'Water',
                         'Electric','Steel']}, 
         'Vine Whip': {'name': 'Vine Whip', 'power': 45, 'type': 'Grass',
-                    'super effective against': ['Water', 'Ground', 'Rock'],
-                    'not very effective against': ['Fire', 'Grass', 'Poison',
+                    'effective': ['Water', 'Ground', 'Rock'],
+                    'not effective': ['Fire', 'Grass', 'Poison',
                     'Flying', 'Bug', 'Dragon', 'Steel']}, 
         'Razor Leaf': {'name': 'Razor Leaf', 'power': 55, 'type': 'Grass',
-                    'super effective against': ['Water', 'Ground', 'Rock'],
-                    'not very effective against': ['Fire', 'Grass', 'Poison',
+                    'effective': ['Water', 'Ground', 'Rock'],
+                    'not effective': ['Fire', 'Grass', 'Poison',
                     'Flying', 'Bug', 'Dragon', 'Steel']},
         'Solar Beam': {'name': 'Solar Beam', 'power': 120, 'type': 'Grass',
-                    'super effective against': ['Water', 'Ground', 'Rock'],
-                    'not very effective against': ['Fire', 'Grass', 'Poison',
+                    'effective': ['Water', 'Ground', 'Rock'],
+                    'not effective': ['Fire', 'Grass', 'Poison',
                     'Flying', 'Bug', 'Dragon', 'Steel']}, 
         'Fire Spin': {'name': 'Fire Spin', 'power': 35, 'type': 'Fire',
-                    'super effective against': ['Grass', 'Ice', 'Bug', 'Steel'],
-                    'not very effective against': ['Fire', 'Water', 'Rock',
+                    'effective': ['Grass', 'Ice', 'Bug', 'Steel'],
+                    'not effective': ['Fire', 'Water', 'Rock',
                     'Dragon']},
         'Flamethrower': {'name': 'Flamethrower', 'power': 90, 'type': 'Fire',
-                        'super effective against': ['Grass', 'Ice', 'Bug',
-                        'Steel'],'not very effective against': ['Fire', 'Water',
+                        'effective': ['Grass', 'Ice', 'Bug',
+                        'Steel'],'not effective': ['Fire', 'Water',
                         'Rock','Dragon']}, 
         'Wrap': {'name': 'Wrap', 'power': 15, 'type': 'Normal', 
-                'super effective against': ['N/A'], 
-                'not very effective against': ['Rock', 'Steel']},
+                'effective': ['N/A'], 
+                'not effective': ['Rock', 'Steel']},
         'Knock Off': {'name': 'Knock Off', 'power': 65, 'type': 'Dark',
-                    'super effective against': ['Psychic', 'Ghost'],
-                    'not very effective against': ['Fighting', 'Dark','Fairy']}, 
+                    'effective': ['Psychic', 'Ghost'],
+                    'not effective': ['Fighting', 'Dark','Fairy']}, 
         'Pursuit': {'name': 'Pursuit', 'power': 40, 'type': 'Dark',
-                    'super effective against': ['Psychic', 'Ghost'],
-                    'not very effective against': ['Fighting', 'Dark','Fairy']}, 
+                    'effective': ['Psychic', 'Ghost'],
+                    'not effective': ['Fighting', 'Dark','Fairy']}, 
         'Psycho Boost': {'name': 'Psycho Boost', 'power': 140, 'type':'Psychic',
-                        'super effective against': ['Fighting', 'Poison'],
-                        'not very effective against': ['Psychic', 'Steel']},
+                        'effective': ['Fighting', 'Poison'],
+                        'not effective': ['Psychic', 'Steel']},
         'Rock Throw': {'name': 'Rock Throw', 'power': 50, 'type': 'Rock',
-                    'super effective against': ['Fire', 'Ice', 'Flying', 'Bug'],
-                    'not very effective against': ['Fighting', 'Ground',
+                    'effective': ['Fire', 'Ice', 'Flying', 'Bug'],
+                    'not effective': ['Fighting', 'Ground',
                     'Steel']}, 
         'Mega Punch': {'name': 'Mega Punch', 'power': 80, 'type': 'Normal', 
-                    'super effective against': ['N/A'], 
-                    'not very effective against': ['Rock', 'Steel']},
+                    'effective': ['N/A'], 
+                    'not effective': ['Rock', 'Steel']},
         'Rock Slide': {'name': 'Rock Slide', 'power': 75, 'type': 'Rock',
-                    'super effective against': ['Fire', 'Ice', 'Flying', 'Bug'],
-                    'not very effective against': ['Fighting', 'Ground',
+                    'effective': ['Fire', 'Ice', 'Flying', 'Bug'],
+                    'not effective': ['Fighting', 'Ground',
                     'Steel']},
         'Earthquake': {'name': 'Earthquake', 'power': 100, 'type': 'Ground',
-                    'super effective against': ['Fire', 'Electric', 'Poison',
-                    'Rock', 'Steel'], 'not very effective against':
+                    'effective': ['Fire', 'Electric', 'Poison',
+                    'Rock', 'Steel'], 'not effective':
                     ['Grass', 'Bug']},  
         'Aqua Jet': {'name': 'Aqua Jet', 'power': 40, 'type': 'Water',
-                    'super effective against': ['Fire', 'Ground', 'Rock'],
-                    'not very effective against': ['Water', 'Grass', 'Dragon']}, 
+                    'effective': ['Fire', 'Ground', 'Rock'],
+                    'not effective': ['Water', 'Grass', 'Dragon']}, 
         'Headbutt': {'name': 'Headbutt', 'power': 70, 'type': 'Normal',
-                    'super effective against': ['N/A'],
-                    'not very effective against': ['Rock', 'Steel']},
+                    'effective': ['N/A'],
+                    'not effective': ['Rock', 'Steel']},
         'Ice Shard': {'name': 'Ice Shard', 'power': 40, 'type': 'Ice',
-                    'super effective against': ['Grass', 'Ground', 'Flying',
-                    'Dragon'], 'not very effective against': ['Fire', 'Water',
+                    'effective': ['Grass', 'Ground', 'Flying',
+                    'Dragon'], 'not effective': ['Fire', 'Water',
                     'Ice', 'Steel']},
         'Waterfall': {'name': 'Waterfall', 'power': 80, 'type': 'Water', 
-                    'super effective against': ["Fire", "Ground", "Rock"], 
-                    'not very effective against': ["Water", "Grass", "Dragon"]},  
+                    'effective': ["Fire", "Ground", "Rock"], 
+                    'not effective': ["Water", "Grass", "Dragon"]},  
         'Double Edge': {'name': 'Double Edge', 'power': 120, 'type': 'Normal',
-                        'super effective against': ['N/A'],
-                        'not very effective against': ['Rock', 'Steel']},
-        'Pound': {'name': 'Pound', 'power': 40, 'type': 'Normal',
-                'super effective against': ['N/A'],
-                'not very effective against': ['Rock', 'Steel']}, 
+                        'effective': ['N/A'],
+                        'not effective': ['Rock', 'Steel']},
         'Absorb': {'name': 'Absorb', 'power': 20, 'type': 'Grass',
-                'super effective against': ['Water', 'Ground', 'Rock'],
-                'not very effective against': ['Fire', 'Grass', 'Poison',
+                'effective': ['Water', 'Ground', 'Rock'],
+                'not effective': ['Fire', 'Grass', 'Poison',
                 'Flying', 'Bug', 'Dragon', 'Steel']}, 
         'Fairy Wind': {'name': 'Fairy Wind', 'power': 40, 'type': 'Fairy',
-                    'super effective against': ['Fighting', 'Dragon', 'Dark'],
-                    'not very effective against': ['Fire', 'Poison', 'Steel']}, 
+                    'effective': ['Fighting', 'Dragon', 'Dark'],
+                    'not effective': ['Fire', 'Poison', 'Steel']}, 
         'Struggle Bug': {'name': 'Struggle Bug', 'power': 50, 'type': 'Bug',
-                        'super effective against': ['Grass', 'Psychic', 'Dark'],
-                        'not very effective against': ['Fire', 'Fighting',
+                        'effective': ['Grass', 'Psychic', 'Dark'],
+                        'not effective': ['Fire', 'Fighting',
                         'Poison', 'Flying', 'Ghost', 'Steel', 'Fairy']}, 
         'Draining Kiss': {'name': 'Draining Kiss', 'power': 50, 'type': 'Fairy',
-                        'super effective against': ['Fighting','Dragon','Dark'],
-                        'not very effective against':['Fire','Poison','Steel']},
+                        'effective': ['Fighting','Dragon','Dark'],
+                        'not effective':['Fire','Poison','Steel']},
         'Bug Buzz': {'name': 'Bug Buzz', 'power': 90, 'type': 'Bug',
-                    'super effective against': ['Grass', 'Psychic', 'Dark'],
-                    'not very effective against': ['Fire', 'Fighting',
+                    'effective': ['Grass', 'Psychic', 'Dark'],
+                    'not effective': ['Fire', 'Fighting',
                     'Poison', 'Flying', 'Ghost', 'Steel', 'Fairy']}}
 
-        # initializes dictionary to hold the results
+        
         effectiveOrNot = {}
 
-        # Computer will be an instance of the pokemon class
         for move in computer.moves:
             moveType = movesDict[move]['type']
 
             effective = 1
             for type_ in player.type_:
-                if type_ in movesDict[move]['super effective against']:
+                if type_ in movesDict[move]['effective']:
                     effective *= 2
-                elif type_ in movesDict[move]['not very effective against']:
+                elif type_ in movesDict[move]['not effective']:
                     effective *= 0.5
                 else:
                     effective *= 1
@@ -370,9 +491,12 @@ class BattleMode(Mode):
 
         return effectiveOrNot
 
-    def move_help(mode, p_pkm, ):
-        # Creating a dictionary that contains player's move
-        # and its corresponding damage 
+    def move_help(mode, playerPKM, compPKM):
+        # Got Pokemon info from https://pokemondb.net/pokedex/squirtle
+        
+        # Creating a list of tuples (power, move) that contains 
+        # all the available moves and their corresponding power
+
         movesPower = {
                     'Nuzzle': 20,
                     'Quick Attack': 40,
@@ -429,239 +553,31 @@ class BattleMode(Mode):
                     'Draining Kiss': 50,
                     'Bug Buzz': 90}
         bestmove = []
-        for type_mod, moves in mode.best_move(mode.p_pkm, mode.mode.o_pkm).items():
+        for effectiveLevel, moves in mode.moveEffective(mode.playerPKM, mode.mode.compPKM).items():
             for move in moves:
-                bestmove.append((movesPower[move]*type_mod, move))
-        return sorted(bestmove)[-1]
-   
-    def battle(mode):
-        class Pokemon(object):
-            def __init__(self, name):
-                startPokemon = {
-            'Pikachu': {'Type': ['Electric'], 'HP': 35, 'Moves': ['Nuzzle', 
-                        'Quick Attack', 'Thunder Shock'], 'Speed': 90,
-                        'Front': 'pikachufront.png', 'Back': 'pikachuback.png'},
-            'Charizard': {'Type': ['Fire', 'Flying'], 'HP': 78, 'Moves':
-                            ['Air Slash', 'Ember', 'Scratch'], 'Speed': 100,
-                            'Front': 'charifront.png', 'Back': 'chariback.png'},
-            'Squirtle': {'Type': ['Water'], 'HP': 44, 'Moves': ['Tackle',
-                         'Water Gun', 'Bite'], 'Speed': 43,
-                         'Front': 'squirfront.png', 'Back': 'squirback.png'},
-            'Mewtwo': {'Type': ['Psychic'], 'HP': 106, 'Moves': ['Confusion',
-                    'Ancient Power', 'Psycho Cut'], 'Speed': 130,
-                    'Front': 'mewfront.png', 'Back': 'mewback.png'},
-            'Gengar': {'Type': ['Ghost', 'Poison'], 'HP': 60, 'Moves': ['Lick',
-                    'Shadow Punch'], 'Speed': 110,
-                    'Front': 'gengarfront.png', 'Back': 'gengarback.png'},
-            'Eevee': {'Type': ['Normal'], 'HP': 55, 'Moves': ['Covet',
-                      'Sand Attack', 'Quick Attack'], 'Speed': 55,
-                      'Front': 'eeveefront.png', 'Back': 'eeveeback.png'},
-            'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25,
-                          'Moves': [ 'Tackle', 'Thunder Shock'], 'Speed': 45,
-                          'Front': 'magfront.png', 'Back': 'magback.png'},
-            'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45,
-                          'Moves': ['Tackle', 'Vine Whip', 'Razor Leaf'],
-                          'Speed': 45, 'Front': 'bulfront.png',
-                          'Back': 'bulback.png'},
-            'Charmander': {'Type': ['Fire'], 'HP': 39, 'Moves': ['Scratch',
-                           'Ember', 'Fire Spin'], 'Speed': 65,
-                           'Front': 'charfront.png', 'Back': 'charback.png'},
-            'Deoxys': {'Type': ['Psychic'], 'HP': 50, 'Moves':['Wrap','Pursuit',
-                       'Knock Off'], 'Speed': 150,
-                       'Front': 'deofront.png', 'Back': 'deoback.png'},
-            'Golem': {'Type': ['Rock', 'Ground'], 'HP': 80, 'Moves': [ 'Tackle',
-                    'Rock Throw', 'Mega Punch'], 'Speed': 45,
-                    'Front': 'golemfront.png', 'Back': 'golemback.png'},
-            'Dewgong': {'Type': ['Water', 'Ice'], 'HP': 90, 'Moves':['Aqua Jet',
-                        'Ice Shard', 'Headbutt'], 'Speed': 70,
-                        'Front': 'dewfront.png', 'Back': 'dewback.png'},
-            'Cutiefly': {'Type': ['Fairy', 'Bug'], 'HP': 40, 'Moves': ['Absorb',
-                        'Fairy Wind', 'Struggle Bug'], 'Speed': 84,
-                        'Front': 'cutiefront.png', 'Back': 'cutieback.png'}}
-                self.name = name
-                self.pokemonList = startPokemon
-                self.type_ = self.pokemonList[name]['Type']
-                self.hp = self.pokemonList[name]['HP']
-                self.oghp = self.pokemonList[name]['HP']
-                self.moves = self.pokemonList[name]['Moves']
-                self.speed = self.pokemonList[name]['Speed']
-                self.frontB = mode.loadImage(self.pokemonList[name]['Front'])
-                self.frontB = self.frontB.resize((100,100))
-                self.frontS = self.frontB.resize((50,50))
-                self.backB = mode.loadImage(self.pokemonList[name]['Back'])
-                self.backB = self.backB.resize((100,100))
-                self.backS = self.backB.resize((50,50))
-                
-            
+                bestmove.append((movesPower[move] * effectiveLevel, move))
+        bestmove = sorted(bestmove)
+        strongest = bestmove[-1]
+        return strongest
 
+    def initiatePokemon(mode):
 
-            def damage(self, move, level, opponent_type):
-                # Calculate damage based on the move and opponent type
-                
-                superEffective = {
-                "Normal": ["N/A"],
-                "Fire": ["Grass", "Ice", "Bug", "Steel"],
-                "Water": ["Fire", "Ground", "Rock"],
-                "Electric": ["Water", "Flying"],
-                "Grass": ["Water", "Ground", "Rock"],
-                "Ice": ["Grass", "Ground", "Flying", "Dragon"],
-                "Ground": ["Fire", "Electric", "Poison", "Rock", "Steel"],
-                "Flying": ["Grass", "Fighting", "Bug"],
-                "Psychic": ["Fighting", "Poison"],
-                "Bug": ["Grass", "Psychic", "Dark"],
-                "Rock": ["Fire", "Ice", "Flying", "Bug"],
-                "Ghost": ["Psychic", "Ghost"],
-                "Dragon": ["Dragon"],
-                "Dark": ["Psychic", "Ghost"],
-                "Steel": ["Ice", "Rock", "Fairy"],
-                "Fairy": ["Fighting", "Dragon", "Dark"]
-                            }
-
-                notEffective = {
-                "Normal": ["Rock", "Steel"],
-                "Fire": ["Fire", "Water", "Rock", "Dragon"],
-                "Water": ["Water", "Grass", "Dragon"],
-                "Electric": ["Electric", "Grass", "Dragon"],
-                "Grass": ["Fire", "Grass", "Poison", "Flying",
-                            "Bug", "Dragon", "Steel"],
-                "Ice": ["Fire", "Water", "Ice", "Steel"],
-                "Ground": ["Grass", "Bug"],
-                "Flying": ["Electric", "Rock", "Steel"],
-                "Psychic": ["Psychic", "Steel"],
-                "Bug": ["Fire", "Fighting", "Poison", "Flying",
-                        "Ghost", "Steel", "Fairy"],
-                "Rock": ["Fighting", "Ground", "Steel"],
-                "Ghost": ["Dark"],
-                "Dragon": ["Steel"],
-                "Dark": ["Fighting", "Dark", "Fairy"],
-                "Steel": ["Fire", "Water", "Electric", "Steel"],
-                "Fairy": ["Fire", "Poison", "Steel"]
-                                }
-
-                moves = {
-                "Normal": ['Quick Attack', 'Slam', 'Scratch', 'Slash',
-                            'Tackle', 'Skull Bash', 'Covet', 'Take Down',
-                            'Last Resort', 'Wrap', 'Mega Punch', 'Headbutt',
-                            'Double Edge', 'Pound'],
-                "Fire": ['Ember', 'Flare Blitz', 'Fire Spin', 'Flamethrower'],
-                "Water": ['Water Gun', 'Aqua Tail', 'Aqua Jet', 'Waterfall'],
-                "Electric": ['Nuzzle', 'Thunder Shock', 'Spark', 'Thunderbolt'],
-                "Grass": ['Vine Whip', 'Razor Leaf', 'Solar Beam', 'Absorb'],
-                "Ice": ['Ice Shard'],
-                "Ground": ['Sand Attack', 'Earthquake'],
-                "Flying": ['Air Slash'],
-                "Psychic": ['Confusion','Psycho Cut','Psystrike','Future Sight',
-                            'Dream Eater', 'Psycho Boost'],
-                "Bug": ['Struggle Bug', 'Bug Buzz'],
-                "Rock": ['Ancient Power', 'Rock Throw', 'Rock Slide'],
-                "Ghost": ['Lick', 'Shadow Punch'],
-                "Dragon": ['Outrage'],
-                "Dark": ['Bite', 'Sucker Punch', 'Knock Off', 'Pursuit'],
-                "Steel": ['Flash Cannon'],
-                "Fairy": ['Fairy Wind', 'Draining Kiss']}
-
-                # Loop throught the moves dictionary to find out the move_type
-                done = False
-                for type_, allMoves in moves.items():
-                    for singleMove in allMoves:
-                        if singleMove == move:
-                            moveType = type_
-                            done = True
-                            break
-                    if done is True:
-                        break
-
-                # Figure out the damage modifier based on opponent's type and
-                # the move type the player is using
-                d_modifier = 1
-                for _type in opponent_type:
-                    if _type in superEffective[moveType]:
-                        d_modifier *= 2
-                    elif _type in notEffective[moveType]:
-                        d_modifier *= 0.5
-                    else:
-                        d_modifier *= 1
-                self.speed = self.speed/2
-
-                
-                movesPower = {
-                    'Nuzzle': 20,
-                    'Quick Attack': 40,
-                    'Thunder Shock': 40,
-                    'Spark': 65,
-                    'Slam': 80,
-                    'Ember': 40,
-                    'Scratch': 40,
-                    'Air Slash': 75,
-                    'Slash': 70,
-                    'Flare Blitz': 120,
-                    'Tackle': 40,
-                    'Water Gun': 40,
-                    'Bite': 60,
-                    'Aqua Tail': 90,
-                    'Skull Bash': 130,
-                    'Confusion': 50,
-                    'Ancient Power': 60,
-                    'Psycho Cut': 70,
-                    'Psystrike': 100,
-                    'Future Sight': 120,
-                    'Lick': 30,
-                    'Shadow Punch': 60,
-                    'Sucker Punch': 70,
-                    'Dream Eater': 100,
-                    'Covet': 60,
-                    'Sand Attack': 55,
-                    'Flash Cannon': 80,
-                    'Take Down': 90,
-                    'Last Resort': 140,
-                    'Thunderbolt': 90,
-                    'Vine Whip': 45,
-                    'Razor Leaf': 55,
-                    'Solar Beam': 120,
-                    'Fire Spin': 35,
-                    'Flamethrower': 90,
-                    'Wrap': 15,
-                    'Knock Off': 65,
-                    'Pursuit': 40,
-                    'Psycho Boost': 140,
-                    'Rock Throw': 50,
-                    'Mega Punch': 80,
-                    'Rock Slide': 75,
-                    'Earthquake': 100,
-                    'Aqua Jet': 40,
-                    'Headbutt': 70,
-                    'Ice Shard': 40,
-                    'Waterfall': 80,
-                    'Double Edge': 120,
-                    'Pound': 40,
-                    'Absorb': 20,
-                    'Fairy Wind': 40,
-                    'Struggle Bug': 50,
-                    'Draining Kiss': 50,
-                    'Bug Buzz': 90}
-
-                # apply the formula to calculate the total damage
-                damage = (movesPower[move] * 0.1 * d_modifier) + (level*4)
-                return damage
-        
-        
-        # Provide all the available pokemons 
-        ask_p_pkm = (f'Your character choices are '
-                     f'{mode.player.characterList([])}. Which character would'
+        # Ask for player's pokemon given all the available characters
+        askPlayerPKM = (f'Your character choices are '
+                     f'{mode.player.charList}. Which character would'
                      f'you like?')
-        character = mode.getUserInput(ask_p_pkm).title()
-        #character = input(f'Your character choices are'
-                     #f'{mode.player.characterList([])}. Which character would'
-                     #f' you like?').title()
+        playerPKM = mode.getUserInput(askPlayerPKM).title()
 
-        # Check whether the name entered is correct
-        while character not in mode.player.characterList([]):
-            askAgainMsg = (f'Your character choices are'
-                           f'{mode.player.characterList([])}. Which '
+        # Check whether the name entered is available
+        while playerPKM not in mode.player.charList:
+            askAgainMsg = (f'You did not enter a valid character'
+                           f'Your character choices are'
+                           f'{mode.player.charList}. Which '
                            f'character would you like?')
-            character = mode.getUserInput(askAgainMsg).title()
-        # Initializes the player's pokémon
-        mode.p_pkm = Pokemon(character)
+            playerPKM = mode.getUserInput(askAgainMsg).title()
+        
+        # Initialize player's pokemon
+        mode.playerPKM = Pokemon(playerPKM, mode.player.level, mode)
 
         # Opponent pokemons based on player's level
         opponentL1 = ['Magnemite', 'Pikachu', 'Charmander', 'Cutiefly',
@@ -670,7 +586,6 @@ class BattleMode(Mode):
         opponentL3 = ['Golem', 'Dewgong', 'Mewtwo']
 
         # Opponent randomly chooses a pokemon character based on player's level
-        # Initialize computer's pokemon
         if mode.player.level == 1:
             levelChoice = random.choices(population=[opponentL1, opponentL2,
                                        opponentL3], weights=[0.6,0.3,0.1])
@@ -686,119 +601,229 @@ class BattleMode(Mode):
                                        opponentL3], weights=[0.1,0.3,0.6])
             for choices in levelChoice:
                 comp_character = random.choice(choices)
-        print(f'Your opponent has chosen a {comp_character}.')
-        mode.o_pkm = Pokemon(comp_character)
-
-
-        # Determines the starter based on speed
-        if mode.p_pkm.speed >= mode.o_pkm.speed:
-            counter = 2
-            print('Player starts!')
-        else:
-            counter = 1
-            print('Opponent starts.')
+    
+        # Initialize computer's pokemon
+        mode.compPKM = Pokemon('Pikachu', mode.player.level, mode)
+        #mode.compPKM = Pokemon(comp_character, mode)
 
         
-        # Finds the most damaging moves (according to type)
-        # from the list generated from mode.best_move
-        highest = 0
-        effectivity = []
-        for key in mode.best_move(mode.o_pkm, mode.p_pkm).keys():
-            effectivity.append(key)
-            if key > highest:
-                highest = key
+        # Determine whether player or computer start based on their speed
+        if mode.playerPKM.speed >= mode.compPKM.speed:
+            mode.playerTurn = True
+            mode.compDone = True
+            mode.playerMakeMove()
+        else:
+            mode.playerTurn= False
+            mode.compMakeMove()
+        
 
-        '''
+    def cheat(mode):
+        # Ask if the player is willing to sacrifice 10% of its HP to know the
+        # best move against computer
         sacrifice = input("Would you like to sacrifice 10% "
                           "of your HP in exchange for the best "
                           "move against your opponent? yes/no ")
         if sacrifice == "yes":
-            p_pkm.hp = 0.9 * p_pkm.hp
-            print('Your best move is', mode.move_help(p_pkm, mode.o_pkm)[-1])
-            print("Your current hp: ", p_pkm.hp)
-        '''
+            mode.playerPKM.hp = 0.9 * mode.playerPKM.hp
+            print('Your best move is',mode.move_help(mode.playerPKM, mode.compPKM)[-1])
+            print("Your current hp: ", modep_pkm.hp)
 
-        # Attacking starts, alternating between the two
-        while (mode.p_pkm.hp > 0 and mode.o_pkm.hp > 0):
-            if counter % 2 == 0:
-                #print('\nYour turn:')
-                #moveAskMsg = (f'The moves avaliable are {mode.p_pkm.moves}'
-                              #f'Which move would you like? ')
-                #move = mode.getUserInput(moveAskMsg).title()
-                print(f'The moves avaliable are {mode.p_pkm.moves}')
-                move = input('Which move would you like? ').title()
-                
 
-                # Ensures that player only picks a move in the list
-                while move not in mode.p_pkm.moves:
-                    print(('You did not input a possible move. '
-                          'Please try again.'))
-                    move = input('Which move would you like ').title()
+    def playerMakeMove(mode): 
+        if mode.playerPKM.hp > 0:  
+            askMoveMsg = (f'The moves avaliable are {mode.playerPKM.moves}. '
+                        f'Which move would you like?')
+            move = mode.getUserInput(askMoveMsg).title()
+                    
+            # Check whether the move entered is available
+            while move not in mode.playerPKM.moves:
+                askMoveAgain = ('You did not input a possible move. '
+                            'Please try again. Which move would you like? '
+                            f'{mode.playerPKM.moves}')
+                move = mode.getUserInput(askMoveAgain).title()
 
-                #
+            mode.playerMove = MovesSprites(move, mode)
+            mode.playerMove.startX, mode.playerMove.startY = 225, 340
+            mode.drawPlayerMove= True
 
-                # Calculate damage and substract it from other's HP
-                mode.o_pkm.hp -= mode.p_pkm.damage(move, mode.player.level,
-                                                   mode.o_pkm.type_)
-                print(f"Your HP: {mode.p_pkm.hp:.2f} Opponent's HP: "
-                      f"{mode.o_pkm.hp:.2f}")
+            # Calculate damage 
+            mode.damageOnComp = mode.playerPKM.damage(move, mode.player.level,
+                                                mode.compPKM.type_)
+            
+            mode.playerDone = True
 
-            else:
-                print("\nOpponent's turn: ")
-
-                # Computer chooses a move based on player's level
-                # When calculating damage, the computer always uses 
-                # player's level to ensure they are evenly matched
-                print("bestmove list:", mode.best_move(mode.o_pkm, mode.p_pkm))
-                if mode.player.level == 3:
-                    mode.p_pkm.hp -= mode.o_pkm.damage(random.choice(mode.best_move(mode.o_pkm,
-                                             mode.p_pkm)[highest]),mode.player.level,
-                                             mode.p_pkm.type_)
-                elif mode.player.level == 2:
-                    move = random.choice(mode.best_move(mode.o_pkm,
-                                                      mode.p_pkm)[effectivity[-2]])
-                    mode.p_pkm.hp -= mode.o_pkm.damage(move,mode.player.level,mode.p_pkm.type_)
-                elif mode.player.level == 1:
-                    move = random.choice(mode.best_move(mode.o_pkm,
-                                                      mode.p_pkm)[effectivity[-1]])
-                    mode.p_pkm.hp -= mode.o_pkm.damage(move,mode.player.level,mode.p_pkm.type_)
-
-                print(f"Your HP: {mode.p_pkm.hp:.2f} Opponent's HP: {mode.o_pkm.hp:.2f}")
-
-            counter += 1
-
-        # returns a tuple stating the winner of the game.
-        # In the case that the player wins, the program returns
-        # the computer pokémon's name and experience points
-        if mode.p_pkm.hp >= mode.o_pkm.hp:
-            print('Player wins!!')
-            mode.player.exp += 10
-        elif mode.o_pkm.hp > mode.p_pkm.hp:
-            print('Computer wins!!')
-            if mode.player.exp >= 5:
-                mode.player.exp -= 5
-            return 'computer'
         
+    def checkPlayerHit(mode):
+        # Check if the position of the move drawn has reached 
+        # computer's pokemon yet
+        if ((440 < mode.playerMove.startX < 460) and
+            (170 < mode.playerMove.startY < 190)):
+            mode.playerDoneMoving = True
+            mode.compDoneMoving = False
+
+    def compMakeMove(mode):
+        if mode.compPKM.hp > 0:
+            # Find the move that does the most damage 
+            # using the dictionary generated in mode.moveEffective
+            highest = 0
+            effectivity = []
+            for key in mode.moveEffective(mode.compPKM, mode.playerPKM).keys():
+                effectivity.append(key)
+                if key > highest:
+                    highest = key
+            print(mode.compPKM.moves)
+
+            # Computer chooses a move based on player's level
+            # When calculating damage, the computer always uses 
+            # player's level to ensure they are evenly matches
+            if mode.player.level == 3:
+                move = random.choice(mode.moveEffective(mode.compPKM,
+                                            mode.playerPKM)[effectivity[0]])
+                mode.damageOnPlayer = mode.compPKM.damage(move,
+                                      mode.player.level, mode.playerPKM.type_)
+            elif mode.player.level == 2:
+                move = random.choice(mode.moveEffective(mode.compPKM,
+                                     mode.playerPKM)[effectivity[-2]])
+                mode.damageOnPlayer = mode.compPKM.damage(move,
+                                      mode.player.level,mode.playerPKM.type_)
+            elif mode.player.level == 1:
+                move = random.choice(mode.moveEffective(mode.compPKM,
+                                     mode.playerPKM)[effectivity[-1]])
+                mode.damageOnPlayer = mode.compPKM.damage(move,
+                                      mode.player.level,mode.playerPKM.type_)
+
+            mode.compMove = MovesSprites(move, mode)
+            mode.compMove.startX, mode.compMove.startY = 450, 180 
+            mode.drawCompMove= True
+
+            mode.compDone = True
+
+    def keyPressed(mode, event):
+        if mode.drawWinner:
+            if event.key == 'Space':
+                mode.app.setActiveMode(mode.app.gameMode)
+
+    def checkCompHit(mode):
+        # Check if the position of the move drawn has reached 
+        # player's pokemon yet
+        if ((215 < mode.compMove.startX < 235) and
+            (330 < mode.compMove.startY < 350)):
+            mode.compDoneMoving = True
+            mode.playerDoneMoving = False
+
+    def determineWiner(mode, playerHP, compHP):
+        # Determine the winner based on whose HP goes negative first
+        if mode.decideWinnter:
+            if (mode.playerPKM.hp > 0) and (mode.compPKM.hp <= 0):
+                mode.player.exp += 10
+                mode.drawWinner = True
+                mode.decideWinnter = False
+                mode.winner = 'You'
+                mode.player.updateCharList(f'{mode.compPKM.name}')
+                mode.player.updateLevel()
+                print(mode.player.level)
+                
+            elif (mode.compPKM.hp > 0) and (mode.playerPKM.hp <= 0):
+                mode.drawWinner = True
+                mode.winner = 'Computer'
+                mode.decideWinnter = False
+                if mode.player.exp >= 5:
+                    mode.player.exp -= 5
+                mode.player.updateLevel()
+
+    def timerFired(mode):
+        # Start drawing player move's sprite if conditions are met
+        if mode.drawPlayerMove:
+            mode.playerMove.spriteCounter = ((1 + mode.playerMove.spriteCounter)
+                                              % len(mode.playerMove.sprites))
+            mode.playerMove.startX += 11.25
+            mode.playerMove.startY -= 8
+            mode.checkPlayerHit()
+            if mode.playerDoneMoving: 
+                mode.drawPlayerMove = False
+                mode.displayPlayerDamage = True
+                mode.playerTurn = False
+                mode.compPKM.hp -= mode.damageOnComp
+                mode.actuallyRunCompMove = True
+        
+        # Start drawing computer move's sprite if conditions are met
+        if mode.drawCompMove:
+            mode.compMove.spriteCounter = ((1 + mode.compMove.spriteCounter)
+                                              % len(mode.compMove.sprites))
+            mode.compMove.startX -= 11.25
+            mode.compMove.startY += 8
+            mode.checkCompHit()
+            if mode.compDoneMoving: 
+                mode.drawCompMove = False
+                mode.playerTurn = True
+                mode.playerPKM.hp -= mode.damageOnPlayer
+                mode.actuallyRunPlayerMove = True
+
+        # Computer and player take turns to attack
+        if ((mode.playerTurn) and (mode.compDone) and (not mode.drawCompMove)
+            and mode.actuallyRunPlayerMove):
+            mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
+            mode.playerMakeMove()
+            mode.actuallyRunPlayerMove = False
+        elif ((not mode.playerTurn) and (mode.playerDone) and 
+              (not mode.drawPlayerMove) and mode.actuallyRunCompMove):
+              mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
+              mode.compMakeMove()
+              mode.actuallyRunCompMove = False
+
+        mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
+
+    def drawMove(mode, canvas):
+        if mode.drawPlayerMove:
+            sprite = mode.playerMove.sprites[mode.playerMove.spriteCounter]
+            canvas.create_image(mode.playerMove.startX, mode.playerMove.startY,
+                                image=ImageTk.PhotoImage(sprite))
+        elif mode.drawCompMove:
+            sprite = mode.compMove.sprites[mode.compMove.spriteCounter]
+            canvas.create_image(mode.compMove.startX, mode.compMove.startY,
+                                image=ImageTk.PhotoImage(sprite))
     
+    def drawHPBar(mode, canvas):
+        canvas.create_text(82,30, text = (f'{int(mode.playerPKM.hp)}/'
+                                          f'{mode.playerPKM.oghp}'),
+                                          fill = '#D63031')
+        canvas.create_rectangle(60, 40, max(60, 60+(mode.playerPKM.hp*3)),
+                                55, fill = '#D63031', outline = '#E84342')
+        canvas.create_image(30,47.5,image=ImageTk.PhotoImage(mode.playerPKM.frontS))
+
+        canvas.create_text(518,30, text = (f'{int(mode.compPKM.hp)}/'
+                                           f'{mode.compPKM.oghp}'),
+                                           fill = '#D63031')
+        subtract  = mode.compPKM.oghp - mode.compPKM.hp
+        canvas.create_rectangle(min(540-mode.compPKM.hp*3, 540), 40, 540,
+                                55, fill = '#D63031', outline = '#E84342')
+        canvas.create_image(570,47.5,
+                            image=ImageTk.PhotoImage(mode.compPKM.frontS))
+
+    def drawResult(mode, canvas):
+        if mode.drawWinner:
+            canvas.create_rectangle(0, 100, 600, 300, fill = '#EAF0F1')
+            canvas.create_text(300,120,text=f'{mode.winner} WON!',fill ='black',
+                               font = 'Georgia 24')
+            canvas.create_text(300, 160, text=f'Your exp: {mode.player.exp}',
+                               fill = 'black', font = 'Georgia 24')
+            canvas.create_text(300, 200, text='Now your Pokemon list is:',
+                               fill = 'black', font = 'Georgia 16')
+            canvas.create_text(300, 220, text = f'{mode.player.charList}',
+                               fill = 'black', font = 'Georgia 16')
+            canvas.create_text(300,260, text= "Press 'Space' to go back.",
+                               fill = 'black', font = 'Georgia 24')
+
     def redrawAll(mode, canvas):
         canvas.create_image(mode.width/2, mode.height/2,
                             image=ImageTk.PhotoImage(mode.scalePic))
-
-        # Draw pokemon's HP bar
-        canvas.create_text(77,30, text = mode.p_pkm.hp, fill = '#D63031')
-        canvas.create_rectangle(60, 40, 60+(mode.p_pkm.hp/mode.p_pkm.oghp)*150,
-                                55, fill = '#D63031', outline = '#E84342')
-        canvas.create_image(30,47.5,image=ImageTk.PhotoImage(mode.p_pkm.frontS))
-
-        canvas.create_text(525,30, text = mode.o_pkm.hp, fill = '#D63031')
-        substract = mode.o_pkm.oghp - mode.o_pkm.hp
-        canvas.create_rectangle(390+(substract/mode.p_pkm.oghp)*150, 40, 540,
-                                55, fill = '#D63031', outline = '#E84342')
-        canvas.create_image(570,47.5,image=ImageTk.PhotoImage(mode.o_pkm.frontS))
-
         # Draw Pokemon
-        canvas.create_image(450,180,image=ImageTk.PhotoImage(mode.o_pkm.frontB))
-        canvas.create_image(225,340,image=ImageTk.PhotoImage(mode.p_pkm.backB))
+        canvas.create_image(450,180,image=ImageTk.PhotoImage(mode.compPKM.frontB))
+        canvas.create_image(225,340,image=ImageTk.PhotoImage(mode.playerPKM.backB))
+
+        mode.drawHPBar(canvas)
+        mode.drawMove(canvas)
+        mode.drawResult(canvas)
 
 
 class HelpMode(Mode):
@@ -810,7 +835,7 @@ class MyModalApp(ModalApp):
         app.gameMode = GameMode()
         app.helpMode = HelpMode()
         app.battleMode = BattleMode()
-        app.setActiveMode(app.battleMode)
+        app.setActiveMode(app.splashScreenMode)
         app.timerDelay = 50
 
 app = MyModalApp(width=600, height=400)
