@@ -9,6 +9,8 @@ from levelmoves import addMoves
 import csv
 import sys
 
+# All the color codes are from https://uicolorpicker.com/
+
 class Player(object):
     add = addMoves
     def __init__(self, exp, level, characters = None):
@@ -38,35 +40,67 @@ class Player(object):
 
 class SplashScreenMode(Mode):
     def appStarted(mode):
-        mode.startpic = mode.app.loadImage('start.png')
-        mode.scalePic = mode.app.scaleImage(mode.startpic, 1/4)
+        mode.startpic = mode.app.loadImage('splash.jpg')
+        mode.colorWhenMoveRegular = '#26ae60'
+        mode.colorWhenMoveMaze = '#26ae60'
+        
 
     def mousePressed(mode, event):
-        if (((mode.width/6 - 40) < event.x < (mode.width/6 + 40)) and
-            ((3.5*mode.height/5 - 20) < event.y < (3.5*mode.height/5 + 20))):
-            mode.app.setActiveMode(mode.app.gameMode)
+        if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (175 < event.y < 205)):
+            mode.app.setActiveMode(mode.app.regularGameMode)
+        elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (235 < event.y < 265)):
+            mode.app.setActiveMode(mode.app.mazeGameMode)
+
+    def mouseMoved(mode, event):
+        if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (175 < event.y < 205)):
+            mode.colorWhenMoveRegular = "#218F76"
+        elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (235 < event.y < 265)):
+            mode.colorWhenMoveMaze = "#218F76"
+        else:
+            mode.colorWhenMoveRegular = '#26ae60'
+            mode.colorWhenMoveMaze = '#26ae60'
+
 
     def redrawAll(mode, canvas):
-        canvas.create_image(mode.width/2, mode.height/2+40,
-                            image=ImageTk.PhotoImage(mode.scalePic))
+        canvas.create_image(mode.width/2, mode.height/2,
+                            image=ImageTk.PhotoImage(mode.startpic))
+        
+        # Draw game name
+        canvas.create_text(mode.width/2, 120, text = 'The Pokémon Game',
+                           fill = '#EAF0F1', font = 'Georgia 40 bold')
+        
+        # Draw regular mode
+        canvas.create_rectangle(mode.width/2-100, 175, mode.width/2+100, 205,
+                                fill = mode.colorWhenMoveRegular, outline = '#10A881')
+        canvas.create_text(mode.width/2, 190,
+                           text='Regular Mode', fill = '#EAF0F1',
+                           font='Georgia 20')
+        
+        # Draw maze mode
+        canvas.create_rectangle(mode.width/2-100, 235, mode.width/2+100, 265,
+                                fill = mode.colorWhenMoveMaze, outline = '#10A881')
+        canvas.create_text(mode.width/2, 250,
+                           text='Maze Mode', fill = '#EAF0F1',
+                           font='Georgia 20')
 
-        canvas.create_text(mode.width/6, 3.5*mode.height/5,
-                           text='Start', fill = 'goldenrod',
-                           font='Georgia 30 bold')
-
-        canvas.create_rectangle(mode.width/2 - 250, mode.height - 80,
-                                mode.width/2 + 250, mode.height - 10,
+        # Draw reminder for progress
+        canvas.create_rectangle(mode.width/2 - 180, mode.height - 80,
+                                mode.width/2 + 180, mode.height - 30,
                                 fill = '#DAE0E2')
-        canvas.create_text(mode.width/2, mode.height-60,
+        canvas.create_text(mode.width/2, mode.height-65,
                            text =("Dont forget "
                                   "to press 's' to save your progress"),
-                           font = 'Georgia 20')
-        canvas.create_text(mode.width/2, mode.height-30,
+                           font = 'Georgia 16')
+        canvas.create_text(mode.width/2, mode.height-45,
                            text =("Use the same username "
                                   "to load your progress."),
-                           font = 'Georgia 20')
+                           font = 'Georgia 16')
 
-class GameMode(Mode):
+class RegularGameMode(Mode):
     player = Player(0, 1)
     def appStarted(mode):
         mode.progressDict = dict()
@@ -117,12 +151,12 @@ class GameMode(Mode):
         username = mode.getUserInput('What is your username').title()
         for key in mode.progressDict.keys():
             if username == key:
-                GameMode.player = Player(mode.progressDict[key]['exp'],
+                RegularGameMode.player = Player(mode.progressDict[key]['exp'],
                                          mode.progressDict[key]['level'],
                                          mode.progressDict[key]['characters'])
-        print('exp', GameMode.player.exp)
-        print('level', GameMode.player.level)
-        print('characters', GameMode.player.charList)
+        print('exp', RegularGameMode.player.exp)
+        print('level', RegularGameMode.player.level)
+        print('characters', RegularGameMode.player.charList)
 
 
     def dropWildPokemon(mode):
@@ -255,13 +289,13 @@ class GameMode(Mode):
 
             # This command saves user's progress under the username
             with open('PlayerProgress.csv', mode = 'w') as csvfile:
-                fieldnames = ['username', 'exp', 'level', 'characters']
+                fieldnames = ['username', 'exp', 'level', 'chars']
                 writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
                 writer.writeheader()
-                writer.writerow({'username': f'{mode.username}',
+                writer.writerow({'username':f'{mode.username}',
                                  'exp': f'{mode.player.exp}',
-                                 'level': f'{GameMode.player.level}',
-                                 'characters': f'{GameMode.player.charList}'})
+                                 'level':f'{RegularGameMode.player.level}',
+                                 'chars':f'{RegularGameMode.player.charList}'})
 
         mode.meetOpponent(mode.mapPlayerX, mode.mapPlayerY)
 
@@ -317,7 +351,7 @@ class BattleMode(Mode):
     def appStarted(mode):
         mode.pic = mode.app.loadImage('bi.png')
         mode.scalePic = mode.app.scaleImage(mode.pic, 4/3)
-        mode.player = GameMode.player
+        mode.player = RegularGameMode.player
         mode.playerPKM = Pokemon('Squirtle', mode.player.level, mode)
         mode.compPKM = Pokemon('Squirtle', mode.player.level, mode)
 
@@ -344,6 +378,11 @@ class BattleMode(Mode):
         mode.drawWinner = False
         mode.winnter = 'no one'
         mode.decideWinnter = True
+
+        mode.displayCheatMove = False
+        mode.cheatMove = ('hi', 0)
+        mode.pause = False
+
         mode.initiatePokemon()
     
     def moveEffective(mode, computer, player):
@@ -614,7 +653,7 @@ class BattleMode(Mode):
                     'Draining Kiss': 50,
                     'Bug Buzz': 90}
         bestmove = []
-        for effectiveLevel, moves in mode.moveEffective(mode.playerPKM, mode.mode.compPKM).items():
+        for effectiveLevel, moves in mode.moveEffective(mode.playerPKM, mode.compPKM).items():
             for move in moves:
                 bestmove.append((movesPower[move] * effectiveLevel, move))
         bestmove = sorted(bestmove)
@@ -681,15 +720,18 @@ class BattleMode(Mode):
     def cheat(mode):
         # Ask if the player is willing to sacrifice 10% of its HP to know the
         # best move against computer
-        sacrifice = input("Would you like to sacrifice 10% "
-                          "of your HP in exchange for the best "
-                          "move against your opponent? yes/no ")
-        if sacrifice == "yes":
+        mode.pause = True
+        askSacrific = ("Would you like to sacrifice 10% "
+                       "of your HP in exchange for the best "
+                       "move against your opponent? yes/no ")
+        sacrifice = mode.getUserInput(askSacrific)
+        if sacrifice == 'yes':
             mode.playerPKM.hp = 0.9 * mode.playerPKM.hp
-            print('Your best move is',mode.stronggestMove(mode.playerPKM,
-                                                          mode.compPKM)[-1])
-            print("Your current hp: ", modep_pkm.hp)
-
+            mode.cheatMove = mode.stronggestMove(mode.playerPKM, mode.compPKM)
+            mode.displayCheatMove = True
+        else:
+            mode.pause = False
+        
 
     def playerMakeMove(mode): 
         if mode.playerPKM.hp > 0:  
@@ -770,7 +812,14 @@ class BattleMode(Mode):
     def keyPressed(mode, event):
         if mode.drawWinner:
             if event.key == 'Space':
-                mode.app.setActiveMode(mode.app.gameMode)
+                mode.app.setActiveMode(mode.app.regularGameMode)
+        elif (event.key == 'c'):
+            mode.cheat()
+        elif (event.key == 'h'):
+            mode.pause = True
+            mode.app.setActiveMode(mode.app.helpMode)
+        elif (event.key == 'p'):
+            mode.pause = not mode.pause
 
     def checkCompHit(mode):
         # Check if the position of the move drawn has reached 
@@ -802,45 +851,46 @@ class BattleMode(Mode):
 
     def timerFired(mode):
         # Start drawing player move's sprite if conditions are met
-        if mode.drawPlayerMove:
-            mode.playerMove.spriteCounter = ((1 + mode.playerMove.spriteCounter)
-                                              % len(mode.playerMove.sprites))
-            mode.playerMove.startX += 11.25
-            mode.playerMove.startY -= 8
-            mode.checkPlayerHit()
-            if mode.playerDoneMoving: 
-                mode.drawPlayerMove = False
-                mode.displayPlayerDamage = True
-                mode.playerTurn = False
-                mode.compPKM.hp -= mode.damageOnComp
-                mode.actuallyRunCompMove = True
-        
-        # Start drawing computer move's sprite if conditions are met
-        if mode.drawCompMove:
-            mode.compMove.spriteCounter = ((1 + mode.compMove.spriteCounter)
-                                              % len(mode.compMove.sprites))
-            mode.compMove.startX -= 11.25
-            mode.compMove.startY += 8
-            mode.checkCompHit()
-            if mode.compDoneMoving: 
-                mode.drawCompMove = False
-                mode.playerTurn = True
-                mode.playerPKM.hp -= mode.damageOnPlayer
-                mode.actuallyRunPlayerMove = True
+        if not mode.pause:
+            if mode.drawPlayerMove:
+                mode.playerMove.spriteCounter = ((1 + mode.playerMove.spriteCounter)
+                                                % len(mode.playerMove.sprites))
+                mode.playerMove.startX += 11.25
+                mode.playerMove.startY -= 8
+                mode.checkPlayerHit()
+                if mode.playerDoneMoving: 
+                    mode.drawPlayerMove = False
+                    mode.displayPlayerDamage = True
+                    mode.playerTurn = False
+                    mode.compPKM.hp -= mode.damageOnComp
+                    mode.actuallyRunCompMove = True
+            
+            # Start drawing computer move's sprite if conditions are met
+            if mode.drawCompMove:
+                mode.compMove.spriteCounter = ((1 + mode.compMove.spriteCounter)
+                                                % len(mode.compMove.sprites))
+                mode.compMove.startX -= 11.25
+                mode.compMove.startY += 8
+                mode.checkCompHit()
+                if mode.compDoneMoving: 
+                    mode.drawCompMove = False
+                    mode.playerTurn = True
+                    mode.playerPKM.hp -= mode.damageOnPlayer
+                    mode.actuallyRunPlayerMove = True
 
-        # Computer and player take turns to attack
-        if ((mode.playerTurn) and (mode.compDone) and (not mode.drawCompMove)
-            and mode.actuallyRunPlayerMove):
+            # Computer and player take turns to attack
+            if ((mode.playerTurn) and (mode.compDone) and (not mode.drawCompMove)
+                and mode.actuallyRunPlayerMove):
+                mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
+                mode.playerMakeMove()
+                mode.actuallyRunPlayerMove = False
+            elif ((not mode.playerTurn) and (mode.playerDone) and 
+                (not mode.drawPlayerMove) and mode.actuallyRunCompMove):
+                mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
+                mode.compMakeMove()
+                mode.actuallyRunCompMove = False
+
             mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
-            mode.playerMakeMove()
-            mode.actuallyRunPlayerMove = False
-        elif ((not mode.playerTurn) and (mode.playerDone) and 
-              (not mode.drawPlayerMove) and mode.actuallyRunCompMove):
-              mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
-              mode.compMakeMove()
-              mode.actuallyRunCompMove = False
-
-        mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
 
     def drawMove(mode, canvas):
         if mode.drawPlayerMove:
@@ -883,6 +933,12 @@ class BattleMode(Mode):
             canvas.create_text(300,260, text= "Press 'Space' to go back.",
                                fill = 'black', font = 'Georgia 24')
 
+    def drawCheatMove(mode, canvas):
+        if mode.displayCheatMove:
+            canvas.create_rectangle(20, 235, 180, 265, fill = '#26ae60')
+            canvas.create_text(100, 250, text = mode.cheatMove, fill = 'white',
+                               font = 'Georgia 16 bold')
+
     def redrawAll(mode, canvas):
         canvas.create_image(mode.width/2, mode.height/2,
                             image=ImageTk.PhotoImage(mode.scalePic))
@@ -893,15 +949,45 @@ class BattleMode(Mode):
         mode.drawHPBar(canvas)
         mode.drawMove(canvas)
         mode.drawResult(canvas)
+        mode.drawCheatMove(canvas)
+
+class MazeGameMode(Mode):
+    pass
 
 
 class HelpMode(Mode):
-    pass
+    def appStarted(mode):
+        mode.startpic = mode.app.loadImage('splash.jpg')
+    
+    def keyPressed(mode, event):
+        if event.key == 'b':
+            mode.app.setActiveMode(mode.app.battleMode)
+        elif event.key == 'r':
+            mode.app.setActiveMode(mode.app.regularGameMode)
+
+        
+    def redrawAll(mode, canvas):
+        canvas.create_image(mode.width/2, mode.height/2,
+                            image=ImageTk.PhotoImage(mode.startpic))
+        msg = '''
+              This is a easy Pokémon game.
+              If you defeat your opponent, your exp will increase.
+              You level will also change based on your exp.
+              If you want to know which move is the best against your
+              opponent in exchange of your HP, press 'c' when you return
+              to the mode you were on. 
+              Press 'b' to return to battle or 'r' to the map.
+              '''  
+        canvas.create_text(mode.width/2, mode.height/2, text=msg,fill = 'white',
+                           font = 'Georgia 18')
+
+
 
 class MyModalApp(ModalApp):
     def appStarted(app):
         app.splashScreenMode = SplashScreenMode()
-        app.gameMode = GameMode()
+        app.regularGameMode = RegularGameMode()
+        app.mazeGameMode = MazeGameMode()
         app.helpMode = HelpMode()
         app.battleMode = BattleMode()
         app.setActiveMode(app.splashScreenMode)
