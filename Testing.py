@@ -6,14 +6,19 @@ import random
 from pokemonclass import Pokemon
 from movesSpritesClass import MovesSprites
 from levelmoves import addMoves
+import csv
+import sys
 
 class Player(object):
     add = addMoves
-    def __init__(self, exp):
+    def __init__(self, exp, level, characters = None):
         self.exp = exp
-        self.level = self.updateLevel()
+        self.level = level
         # Player's starting character list
-        self.charList = set(['Bulbasaur', 'Charmander', 'Squirtle'])
+        if characters == None:
+            self.charList = set(['Bulbasaur', 'Charmander', 'Squirtle'])
+        else:
+            self.charList = characters
 
     def updateLevel(self):
         # Calculate player's level based on its exp 
@@ -21,7 +26,7 @@ class Player(object):
             self.level = 1
         elif 10 <= self.exp <= 20:
             self.level = 2
-        else:
+        elif self.exp > 20:
             self.level = 3
         return self.level
 
@@ -38,20 +43,33 @@ class SplashScreenMode(Mode):
 
     def mousePressed(mode, event):
         if (((mode.width/6 - 40) < event.x < (mode.width/6 + 40)) and
-            ((4*mode.height/5 - 20) < event.y < (4*mode.height/5 + 20))):
+            ((3.5*mode.height/5 - 20) < event.y < (3.5*mode.height/5 + 20))):
             mode.app.setActiveMode(mode.app.gameMode)
 
     def redrawAll(mode, canvas):
         canvas.create_image(mode.width/2, mode.height/2+40,
                             image=ImageTk.PhotoImage(mode.scalePic))
 
-        canvas.create_text(mode.width/6, 4*mode.height/5,
+        canvas.create_text(mode.width/6, 3.5*mode.height/5,
                            text='Start', fill = 'goldenrod',
                            font='Georgia 30 bold')
 
+        canvas.create_rectangle(mode.width/2 - 250, mode.height - 80,
+                                mode.width/2 + 250, mode.height - 10,
+                                fill = '#DAE0E2')
+        canvas.create_text(mode.width/2, mode.height-60,
+                           text =("Dont forget "
+                                  "to press 's' to save your progress"),
+                           font = 'Georgia 20')
+        canvas.create_text(mode.width/2, mode.height-30,
+                           text =("Use the same username "
+                                  "to load your progress."),
+                           font = 'Georgia 20')
+
 class GameMode(Mode):
-    player = Player(0)
+    player = Player(0, 1)
     def appStarted(mode):
+        mode.progressDict = dict()
         mode.startpic = mode.app.loadImage('gamemap.png')
         mode.scalePic = mode.app.scaleImage(mode.startpic, 3)
         mode.mapWidth, mode.mapHeight = mode.scalePic.size
@@ -77,7 +95,36 @@ class GameMode(Mode):
 
         mode.right, mode.left, mode.up, mode.down = False, False, False, False
         mode.loadSprites()
+
+        mode.loadProgress()
+        
+
+        #mode.username = mode.getUserInput('What is your username').title()
     
+    def loadProgress(mode):
+        # Leanrt and modified from
+        # https://realpython.com/python-csv/#reading-csv-files-with-csv
+        with open('PlayerProgress.csv', mode = 'r') as csvfile:
+            csvReader = csv.reader(csvfile)
+            next(csvReader, None)
+            for row in csvReader:
+                mode.progressDict[row[0]] = {'exp': int(row[1]),
+                                             'level': int(row[2]),
+                                             'characters': row[3]}
+                
+        print(mode.progressDict)
+
+        username = mode.getUserInput('What is your username').title()
+        for key in mode.progressDict.keys():
+            if username == key:
+                GameMode.player = Player(mode.progressDict[key]['exp'],
+                                         mode.progressDict[key]['level'],
+                                         mode.progressDict[key]['characters'])
+        print('exp', GameMode.player.exp)
+        print('level', GameMode.player.level)
+        print('characters', GameMode.player.charList)
+
+
     def dropWildPokemon(mode):
         # Drop random, wild pokemon
         '''
@@ -201,6 +248,20 @@ class GameMode(Mode):
             mode.mapPlayerY += 10
             mode.down = True
             mode.up, mode.left, mode.right = False, False, False
+        
+        elif (event.key == 's'):
+            # Leanrt and modified from
+            # https://realpython.com/python-csv/#reading-csv-files-with-csv
+
+            # This command saves user's progress under the username
+            with open('PlayerProgress.csv', mode = 'w') as csvfile:
+                fieldnames = ['username', 'exp', 'level', 'characters']
+                writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+                writer.writeheader()
+                writer.writerow({'username': f'{mode.username}',
+                                 'exp': f'{mode.player.exp}',
+                                 'level': f'{GameMode.player.level}',
+                                 'characters': f'{GameMode.player.charList}'})
 
         mode.meetOpponent(mode.mapPlayerX, mode.mapPlayerY)
 
@@ -254,7 +315,6 @@ class GameMode(Mode):
 
 class BattleMode(Mode):
     def appStarted(mode):
-        #mode.loadProgress
         mode.pic = mode.app.loadImage('bi.png')
         mode.scalePic = mode.app.scaleImage(mode.pic, 4/3)
         mode.player = GameMode.player
@@ -282,10 +342,10 @@ class BattleMode(Mode):
         mode.damageOnComp = 0
 
         mode.drawWinner = False
-        mode.winnter = 'noone'
+        mode.winnter = 'no one'
         mode.decideWinnter = True
         mode.initiatePokemon()
-
+    
     def moveEffective(mode, computer, player):
         # Got Pokemon info from https://pokemondb.net/pokedex/squirtle
 
@@ -453,9 +513,6 @@ class BattleMode(Mode):
         'Double Edge': {'name': 'Double Edge', 'power': 120, 'type': 'Normal',
                         'effective': ['N/A'],
                         'not effective': ['Rock', 'Steel']},
-        'Pound': {'name': 'Pound', 'power': 40, 'type': 'Normal',
-                'effective': ['N/A'],
-                'not effective': ['Rock', 'Steel']}, 
         'Absorb': {'name': 'Absorb', 'power': 20, 'type': 'Grass',
                 'effective': ['Water', 'Ground', 'Rock'],
                 'not effective': ['Fire', 'Grass', 'Poison',
@@ -494,11 +551,12 @@ class BattleMode(Mode):
 
         return effectiveOrNot
 
-    def move_help(mode, playerPKM, compPKM):
+    def stronggestMove(mode, playerPKM, compPKM):
         # Got Pokemon info from https://pokemondb.net/pokedex/squirtle
         
         # Creating a list of tuples (power, move) that contains 
         # all the available moves and their corresponding power
+        # Return the strongest move with the highest power
 
         movesPower = {
                     'Nuzzle': 20,
@@ -573,7 +631,8 @@ class BattleMode(Mode):
 
         # Check whether the name entered is available
         while playerPKM not in mode.player.charList:
-            askAgainMsg = (f'Your character choices are'
+            askAgainMsg = (f'You did not enter a valid character'
+                           f'Your character choices are'
                            f'{mode.player.charList}. Which '
                            f'character would you like?')
             playerPKM = mode.getUserInput(askAgainMsg).title()
@@ -627,7 +686,8 @@ class BattleMode(Mode):
                           "move against your opponent? yes/no ")
         if sacrifice == "yes":
             mode.playerPKM.hp = 0.9 * mode.playerPKM.hp
-            print('Your best move is',mode.move_help(mode.playerPKM, mode.compPKM)[-1])
+            print('Your best move is',mode.stronggestMove(mode.playerPKM,
+                                                          mode.compPKM)[-1])
             print("Your current hp: ", modep_pkm.hp)
 
 
@@ -679,17 +739,27 @@ class BattleMode(Mode):
             # When calculating damage, the computer always uses 
             # player's level to ensure they are evenly matches
             if mode.player.level == 3:
-                mode.damageOnPlayer = mode.compPKM.damage(random.choice(mode.moveEffective(mode.compPKM,
-                                            mode.playerPKM)[0]),mode.player.level,
-                                            mode.playerPKM.type_)
-            elif mode.player.level == 2:
                 move = random.choice(mode.moveEffective(mode.compPKM,
-                                                    mode.playerPKM)[effectivity[-2]])
-                mode.damageOnPlayer = mode.compPKM.damage(move,mode.player.level,mode.playerPKM.type_)
+                                            mode.playerPKM)[effectivity[0]])
+                mode.damageOnPlayer = mode.compPKM.damage(move,
+                                      mode.player.level, mode.playerPKM.type_)
+            elif mode.player.level == 2:
+                if len(effectivity) >= 2:
+                    move = random.choice(mode.moveEffective(mode.compPKM,
+                                         mode.playerPKM)[effectivity[-2]])
+                    mode.damageOnPlayer = mode.compPKM.damage(move,
+                                        mode.player.level,mode.playerPKM.type_)
+                else:
+                    print('<2')
+                    move = random.choice(mode.moveEffective(mode.compPKM,
+                                         mode.playerPKM)[effectivity[0]])
+                    mode.damageOnPlayer = mode.compPKM.damage(move,
+                                        mode.player.level,mode.playerPKM.type_)
             elif mode.player.level == 1:
                 move = random.choice(mode.moveEffective(mode.compPKM,
-                                                    mode.playerPKM)[effectivity[-1]])
-                mode.damageOnPlayer = mode.compPKM.damage(move,mode.player.level,mode.playerPKM.type_)
+                                     mode.playerPKM)[effectivity[-1]])
+                mode.damageOnPlayer = mode.compPKM.damage(move,
+                                      mode.player.level,mode.playerPKM.type_)
 
             mode.compMove = MovesSprites(move, mode)
             mode.compMove.startX, mode.compMove.startY = 450, 180 
