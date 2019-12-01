@@ -7,20 +7,19 @@ from pokemonclass import Pokemon
 from movesSpritesClass import MovesSprites
 from levelmoves import addMoves
 import csv
-import sys
 
 # All the color codes are from https://uicolorpicker.com/
 
 class Player(object):
     add = addMoves
-    def __init__(self, exp, level, characters = None):
+    def __init__(self, exp, level, chars = None):
         self.exp = exp
         self.level = level
         # Player's starting character list
-        if characters == None:
+        if chars == None:
             self.charList = set(['Bulbasaur', 'Charmander', 'Squirtle'])
         else:
-            self.charList = characters
+            self.charList = chars
 
     def updateLevel(self):
         # Calculate player's level based on its exp 
@@ -130,38 +129,43 @@ class RegularGameMode(Mode):
         mode.right, mode.left, mode.up, mode.down = False, False, False, False
         mode.loadSprites()
 
+        mode.username = 'hi'
+        mode.newPlayer = True
         mode.loadProgress()
         
-
-        #mode.username = mode.getUserInput('What is your username').title()
     
     def loadProgress(mode):
         # Leanrt and modified from
         # https://realpython.com/python-csv/#reading-csv-files-with-csv
+        charSet = set()
+
         with open('PlayerProgress.csv', mode = 'r') as csvfile:
             csvReader = csv.reader(csvfile)
             next(csvReader, None)
             for row in csvReader:
+                charRaw = row[3]
+                charStr = charRaw.split(", ")
+                charStr[0], charStr[-1] = charStr[0][1:], charStr[-1][:-1]
+                for char in charStr:
+                    char = char.strip(" '")
+                    charSet.add(char)
                 mode.progressDict[row[0]] = {'exp': int(row[1]),
                                              'level': int(row[2]),
-                                             'characters': row[3]}
-                
+                                             'characters': charSet}
+
         print(mode.progressDict)
 
-        username = mode.getUserInput('What is your username').title()
+        mode.username = mode.getUserInput('What is your username').title()
         for key in mode.progressDict.keys():
-            if username == key:
+            if mode.username == key:
                 RegularGameMode.player = Player(mode.progressDict[key]['exp'],
                                          mode.progressDict[key]['level'],
-                                         mode.progressDict[key]['characters'])
-        print('exp', RegularGameMode.player.exp)
-        print('level', RegularGameMode.player.level)
-        print('characters', RegularGameMode.player.charList)
-
+                                         charSet)
+        return mode.progressDict
 
     def dropWildPokemon(mode):
         # Drop random, wild pokemon
-        '''
+        
         for i in range(3):
             wildX = random.randint(mode.mapLeftEnd + mode.scrollMargin,
                                    mode.mapRightEnd - mode.scrollMargin)
@@ -173,6 +177,7 @@ class RegularGameMode(Mode):
             wildX = random.randint(200,300)
             wildY = random.randint(200,300)
             mode.wildList.append((wildX, wildY))
+        '''
         
   
     def loadSprites(mode):
@@ -263,23 +268,23 @@ class RegularGameMode(Mode):
 
     def keyPressed(mode, event):
         if (event.key == "Left"):
-            mode.movePlayer(-10, 0)
-            mode.mapPlayerX -= 10
+            mode.movePlayer(-20, 0)
+            mode.mapPlayerX -= 20
             mode.left = True
             mode.up, mode.down, mode.right = False, False, False
         elif (event.key == "Right"):
-            mode.movePlayer(+10, 0)
-            mode.mapPlayerX += 10
+            mode.movePlayer(+20, 0)
+            mode.mapPlayerX += 20
             mode.right = True
             mode.up, mode.down, mode.left = False, False, False
         elif (event.key == 'Up'):
-            mode.movePlayer(0, - 10)
-            mode.mapPlayerY -= 10
+            mode.movePlayer(0, - 20)
+            mode.mapPlayerY -= 20
             mode.up = True
             mode.down, mode.left, mode.right = False, False, False
         elif (event.key == 'Down'):
-            mode.movePlayer(0, +10)
-            mode.mapPlayerY += 10
+            mode.movePlayer(0, +20)
+            mode.mapPlayerY += 20
             mode.down = True
             mode.up, mode.left, mode.right = False, False, False
         
@@ -288,15 +293,31 @@ class RegularGameMode(Mode):
             # https://realpython.com/python-csv/#reading-csv-files-with-csv
 
             # This command saves user's progress under the username
+            progressList = list()
+            with open('PlayerProgress.csv', mode = 'r') as csvfile:
+                csvReader = csv.reader(csvfile)
+                next(csvReader, None)
+                for row in csvReader:
+                    if row[0] == mode.username:
+                        mode.newPlayer = False
+                        info = [row[0], mode.player.exp,
+                                RegularGameMode.player.level,
+                                RegularGameMode.player.charList]
+                    else:
+                        info = [row[0], row[1], row[2], row[3]]
+                    progressList.append(info)
+            
             with open('PlayerProgress.csv', mode = 'w') as csvfile:
-                fieldnames = ['username', 'exp', 'level', 'chars']
-                writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
-                writer.writeheader()
-                writer.writerow({'username':f'{mode.username}',
-                                 'exp': f'{mode.player.exp}',
-                                 'level':f'{RegularGameMode.player.level}',
-                                 'chars':f'{RegularGameMode.player.charList}'})
-
+                writer = csv.writer(csvfile)
+                writer.writerow(['username', 'exp', 'level', 'chars'])
+                for person in progressList:
+                    writer.writerow(person)
+                if mode.newPlayer:
+                    currentInfo = [mode.username, mode.player.exp,
+                                   RegularGameMode.player.level,
+                                   RegularGameMode.player.charList]
+                    writer.writerow(currentInfo)
+            
         mode.meetOpponent(mode.mapPlayerX, mode.mapPlayerY)
 
     def drawPlayer(mode, canvas):
@@ -704,7 +725,7 @@ class BattleMode(Mode):
     
         # Initialize computer's pokemon
         mode.compPKM = Pokemon('Pikachu', mode.player.level, mode)
-        #mode.compPKM = Pokemon(comp_character, mode)
+        #mode.compPKM = Pokemon(comp_character, mode.player.level, mode)
 
         
         # Determine whether player or computer start based on their speed
@@ -837,6 +858,7 @@ class BattleMode(Mode):
                 mode.drawWinner = True
                 mode.decideWinnter = False
                 mode.winner = 'You'
+                print('tyep of charList', type(RegularGameMode.player.charList))
                 mode.player.updateCharList(f'{mode.compPKM.name}')
                 mode.player.updateLevel()
                 print(mode.player.level)
