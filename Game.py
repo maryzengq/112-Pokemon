@@ -7,7 +7,7 @@ from pokemonclass import Pokemon
 from movesSpritesClass import MovesSprites
 from levelmoves import addMoves
 from playerclass import Player
-from mazebacktracking import BacktrackingPuzzleSolver, State, MazeSolver, MazeState
+from mazebacktracking import BacktrackingPuzzleSolver,State,MazeSolver,MazeState
 import csv
 
 # All the color codes are from https://uicolorpicker.com/
@@ -18,7 +18,6 @@ class SplashScreenMode(Mode):
         mode.startpic = mode.app.loadImage('splash.jpg')
         mode.colorWhenMoveRegular = '#26ae60'
         mode.colorWhenMoveMaze = '#26ae60'
-        
 
     def mousePressed(mode, event):
         if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
@@ -26,7 +25,7 @@ class SplashScreenMode(Mode):
             mode.app.setActiveMode(mode.app.regularGameMode)
         elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
             (235 < event.y < 265)):
-            mode.app.setActiveMode(mode.app.mazeGameMode)
+            mode.app.setActiveMode(mode.app.mazeStart)
 
     def mouseMoved(mode, event):
         if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
@@ -202,21 +201,6 @@ class RegularGameMode(Mode):
         mapDownEnd = mode.height//2 + mode.mapHeight//2
 
         # Make sure that player doesn't go off the map horizontally
-        if ((mode.playerX + dx) > mode.width) or ((mode.playerX + dx) < 0 ):
-            pass
-        else:
-            mode.playerX += dx
-
-        # Make sure that player doesn't go off the map vertically
-        if ((mode.playerY + dy) < 0) or ((mode.playerY + dy) > mode.height):
-            pass
-        else:
-            mode.playerY += dy
-
-        mode.makePlayerVisible()
-
-        '''
-        # Make sure that player doesn't go off the map horizontally
         if mode.playerX + dx > mapRightEnd - mode.scrollMargin:
             pass
         elif mode.playerX + dx < mapLeftEnd + mode.scrollMargin:
@@ -231,7 +215,8 @@ class RegularGameMode(Mode):
             pass
         else:
             mode.playerY += dy
-        '''
+        
+        mode.makePlayerVisible()
 
     
     def meetOpponent(mode, cx, cy):
@@ -251,23 +236,23 @@ class RegularGameMode(Mode):
 
     def keyPressed(mode, event):
         if (event.key == "Left"):
-            mode.movePlayer(-20, 0)
-            mode.mapPlayerX -= 20
+            mode.movePlayer(-10, 0)
+            mode.mapPlayerX -= 10
             mode.left = True
             mode.up, mode.down, mode.right = False, False, False
         elif (event.key == "Right"):
-            mode.movePlayer(+20, 0)
-            mode.mapPlayerX += 20
+            mode.movePlayer(+10, 0)
+            mode.mapPlayerX += 10
             mode.right = True
             mode.up, mode.down, mode.left = False, False, False
         elif (event.key == 'Up'):
-            mode.movePlayer(0, - 20)
-            mode.mapPlayerY -= 20
+            mode.movePlayer(0, - 10)
+            mode.mapPlayerY -= 10
             mode.up = True
             mode.down, mode.left, mode.right = False, False, False
         elif (event.key == 'Down'):
-            mode.movePlayer(0, +20)
-            mode.mapPlayerY += 20
+            mode.movePlayer(0, +10)
+            mode.mapPlayerY += 10
             mode.down = True
             mode.up, mode.left, mode.right = False, False, False
         
@@ -956,20 +941,98 @@ class BattleMode(Mode):
         mode.drawResult(canvas)
         mode.drawCheatMove(canvas)
 
+class MazeStart(Mode):
+    # User can choose different difficulty levels
+
+    level = 'easy'
+    def appStarted(mode):
+        mode.startpic = mode.app.loadImage('splash.jpg')
+        mode.colorEasy = '#26ae60'
+        mode.colorIntermediate = '#26ae60'
+        mode.colorHard = '#26ae60'
+
+    def mousePressed(mode, event):
+        if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (160 < event.y < 190)):
+            MazeStart.level = 'easy'
+            mode.app.setActiveMode(mode.app.mazeGameMode)
+        elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (220 < event.y < 250)):
+            MazeStart.level = 'intermediate'
+            mode.app.setActiveMode(mode.app.mazeGameMode)
+        elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (280 < event.y < 310)):
+            MazeStart.level = 'hard'
+            mode.app.setActiveMode(mode.app.mazeGameMode)
+
+    def mouseMoved(mode, event):
+        if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (160 < event.y < 190)):
+            mode.colorEasy = "#218F76"
+        elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (220 < event.y < 250)):
+            mode.colorIntermediate = "#218F76"
+        elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (280 < event.y < 310)):
+            mode.colorHard = "#218F76"
+        else:
+            mode.colorEasy = '#26ae60'
+            mode.colorIntermediate = '#26ae60'
+            mode.colorHard = '#26ae60'
+
+
+    def redrawAll(mode, canvas):
+        canvas.create_image(mode.width/2, mode.height/2,
+                            image=ImageTk.PhotoImage(mode.startpic))
+        
+        # Draw game name
+        canvas.create_text(mode.width/2, 110, text = 'Maze Mode Level',
+                           fill = '#EAF0F1', font = 'Georgia 36 bold')
+        
+        # Draw easy mode
+        canvas.create_rectangle(mode.width/2-100, 160, mode.width/2+100, 190,
+                                fill = mode.colorEasy, outline = '#10A881')
+        canvas.create_text(mode.width/2, 175,
+                           text='Easy', fill = '#EAF0F1',
+                           font='Georgia 20')
+        
+        # Draw intermediate mode
+        canvas.create_rectangle(mode.width/2-100, 220, mode.width/2+100, 250,
+                                fill = mode.colorIntermediate, outline = '#10A881')
+        canvas.create_text(mode.width/2, 235,
+                           text='Intermediate', fill = '#EAF0F1',
+                           font='Georgia 20')
+        
+        # Draw hard mode
+        canvas.create_rectangle(mode.width/2-100, 280, mode.width/2+100, 310,
+                                fill = mode.colorHard, outline = '#10A881')
+        canvas.create_text(mode.width/2, 295,
+                           text='Hard', fill = '#EAF0F1',
+                           font='Georgia 20')
+
 class MazeGameMode(Mode):
     player = Player(0,1)
     def appStarted(mode):
         mode.progressDict = dict()
+        mode.win = False
+        mode.drawWinBool = False
 
-        #mode.tree = Image.open('tree.png')
-        #mode.path = Image.open('path.png')
+        # Different levels will have different numbers of rows and cols
+        if MazeStart.level == 'easy':
+            mode.rows, mode.cols = 8, 12
+        elif MazeStart.level == 'intermediate':
+            mode.rows, mode.cols = 10, 15
+        elif MazeStart.level == 'hard':
+            mode.rows, mode.cols = 12, 16
+        
+        mode.cellWidth = mode.width//mode.cols
+        mode.cellHeight = mode.height//mode.rows
+
+        mode.tree = Image.open('tree.png')
+        mode.path = Image.open('path.png')
         mode.mazeBoard = []
         mode.solution = []
         mode.createMap()
-        
-        mode.rows, mode.cols = 8, 12
-        mode.cellWidth = mode.width/mode.cols
-        mode.cellHeight = mode.height/mode.rows
 
         # Generate random wild pokemon on the map
         mode.wildPic = mode.app.loadImage('egg.png')
@@ -984,6 +1047,50 @@ class MazeGameMode(Mode):
         mode.newPlayer = True
         mode.loadProgress()
     
+    def createMap(mode):
+        # Use backtracking to create a solvable map
+        easyLists = [([['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen']], [(1, 0), (1, 1), (0, 1), (0, 2), (1, 2), (2, 2), (2, 3), (1, 3), (1, 4), (2, 4), (2, 5), (1, 5), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6), (6, 7), (6, 8), (6, 9), (5, 9), (4, 9), (3, 9), (2, 9), (2, 10), (1, 10), (1, 11), (2, 11), (3, 11), (4, 11), (5, 11), (6, 11), (7, 11)]),
+                     ([['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (1, 1), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (6, 3), (6, 4), (6, 5), (6, 6), (6, 7), (7, 7), (7, 8), (7, 9), (7, 10), (7, 11)]),
+                     ([['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (7, 1), (7, 2), (7, 3), (6, 3), (5, 3), (5, 4), (5, 5), (5, 6), (5, 7), (6, 7), (7, 7), (7, 8), (6, 8), (6, 9), (7, 9), (7, 10), (7, 11)]),
+                     ([['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (2, 4), (1, 4), (1, 5), (1, 6), (0, 6), (0, 7), (1, 7), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (6, 9), (5, 9), (4, 9), (4, 10), (4, 11), (5, 11), (6, 11), (7, 11)]),
+                     ([['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (6, 2), (6, 3), (6, 4), (5, 4), (4, 4), (4, 5), (3, 5), (3, 6), (3, 7), (4, 7), (5, 7), (5, 8), (5, 9), (5, 10), (6, 10), (7, 10), (7, 11)])]
+
+
+        intermediateLists = [([['lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(0, 1), (1, 1), (2, 1), (2, 2), (3, 2), (4, 2), (5, 2), (5, 3), (6, 3), (6, 4), (7, 4), (7, 5), (8, 5), (9, 5), (9, 6), (8, 6), (8, 7), (8, 8), (9, 8), (9, 9), (9, 10), (9, 11), (9, 12), (9, 13), (9, 14)]),
+                             ([['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (5, 1), (4, 1), (4, 2), (3, 2), (3, 3), (3, 4), (3, 5), (4, 5), (5, 5), (5, 6), (4, 6), (3, 6), (2, 6), (2, 7), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (6, 9), (5, 9), (5, 10), (6, 10), (7, 10), (7, 11), (7, 12), (6, 12), (6, 13), (7, 13), (8, 13), (9, 13), (9, 14)]),
+                             ([['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (0, 4), (0, 5), (0, 6), (0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (4, 8), (5, 8), (5, 9), (6, 9), (6, 10), (6, 11), (6, 12), (6, 13), (5, 13), (5, 14), (6, 14), (7, 14), (8, 14), (9, 14)]),
+                             ([['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (2, 0), (3, 0), (3, 1), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (7, 3), (6, 3), (6, 4), (5, 4), (5, 5), (6, 5), (6, 6), (5, 6), (5, 7), (5, 8), (5, 9), (5, 10), (6, 10), (7, 10), (8, 10), (8, 11), (9, 11), (9, 12), (9, 13), (8, 13), (8, 14), (9, 14)]),
+                             ([['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen']], [(0, 1), (0, 2), (1, 2), (2, 2), (2, 3), (2, 4), (2, 5), (3, 5), (4, 5), (4, 4), (5, 4), (6, 4), (6, 5), (6, 6), (7, 6), (7, 7), (8, 7), (8, 8), (7, 8), (7, 9), (8, 9), (9, 9), (9, 10), (8, 10), (7, 10), (7, 11), (7, 12), (7, 13), (8, 13), (9, 13), (9, 14)])]
+
+        hardLists = [([['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (8, 1), (8, 2), (7, 2), (7, 3), (7, 4), (6, 4), (6, 5), (7, 5), (7, 6), (7, 7), (8, 7), (9, 7), (10, 7), (11, 7), (11, 8), (11, 9), (11, 10), (10, 10), (10, 11), (10, 12), (10, 13), (11, 13), (11, 14), (11, 15)]),
+                     ([['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(0, 1), (1, 1), (2, 1), (3, 1), (3, 2), (4, 2), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3), (8, 4), (9, 4), (10, 4), (10, 5), (10, 6), (9, 6), (8, 6), (8, 7), (9, 7), (10, 7), (11, 7), (11, 8), (10, 8), (10, 9), (9, 9), (9, 10), (10, 10), (11, 10), (11, 11), (11, 12), (11, 13), (11, 14), (11, 15)]),
+                     ([['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (1, 1), (1, 2), (0, 2), (0, 3), (1, 3), (2, 3), (2, 4), (2, 5), (1, 5), (0, 5), (0, 6), (1, 6), (2, 6), (2, 7), (2, 8), (1, 8), (0, 8), (0, 9), (1, 9), (1, 10), (2, 10), (3, 10), (3, 11), (3, 12), (4, 12), (5, 12), (5, 13), (5, 14), (6, 14), (7, 14), (7, 15), (8, 15), (9, 15), (9, 14), (10, 14), (11, 14), (11, 15)]),
+                     ([['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen'], ['lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen']], [(1, 0), (2, 0), (2, 1), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (2, 5), (2, 6), (3, 6), (4, 6), (4, 7), (4, 8), (5, 8), (6, 8), (7, 8), (8, 8), (8, 9), (9, 9), (9, 10), (9, 11), (9, 12), (9, 13), (10, 13), (11, 13), (11, 14), (11, 15)]),
+                     ([['lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen'], ['forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'forestgreen'], ['forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'forestgreen', 'forestgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'lightgreen', 'forestgreen', 'lightgreen', 'lightgreen']], [(1, 0), (1, 1), (1, 2), (2, 2), (3, 2), (4, 2), (4, 3), (3, 3), (2, 3), (1, 3), (1, 4), (1, 5), (2, 5), (2, 6), (2, 7), (1, 7), (1, 8), (2, 8), (2, 9), (2, 10), (1, 10), (1, 11), (1, 12), (0, 12), (0, 13), (1, 13), (2, 13), (3, 13), (4, 13), (5, 13), (5, 14), (6, 14), (6, 15), (7, 15), (8, 15), (9, 15), (9, 14), (10, 14), (11, 14), (11, 15)])]
+
+        if MazeStart.level == 'easy':
+            choice = random.choice(easyLists)
+        elif MazeStart.level == 'intermediate':
+            choice = random.choice(intermediateLists)
+        elif MazeStart.level == 'hard':
+            choice = random.choice(hardLists)
+            
+        mode.mazeBoard = choice[0]
+        mode.solution = choice[1]
+
+        '''
+        colors = ['lightgreen', 'forestgreen']
+        solvable = False
+        while solvable == False:
+            mode.mazeBoard = [[random.choice(colors) for i in range(mode.cols)]
+                               for i in range(mode.rows)]
+            mode.mazeBoard[0][0] = 'lightgreen'
+            (path, solution) = MazeSolver(mode.mazeBoard).solve(printReport=True)
+            if solution != None:
+                solvable = True
+                mode.solution = path
+        '''
+
     def loadProgress(mode):
         # Learnt and modified from
         # https://realpython.com/python-csv/#reading-csv-files-with-csv
@@ -1014,10 +1121,11 @@ class MazeGameMode(Mode):
         return mode.progressDict
 
     def dropWildPokemon(mode):
+        # Only drop wild pokemon on player's path to solve the mode
         availableCell = []
         for row in range(mode.rows):
             for col in range(mode.cols):
-                if mode.mazeBoard[row][col] == 'lightgreen':
+                if (row,col) in mode.solution:
                     availableCell.append((row, col))
 
         for _ in range(5):
@@ -1039,51 +1147,78 @@ class MazeGameMode(Mode):
         # http://www.cs.cmu.edu/~112/notes/notes-animations-part2.html#ioMethods
 
         # Load player's sprites for going in all four directions
-        spriteUp = mode.app.loadImage('up.png')
+        # Up
+        up = mode.app.loadImage('up.png')
+        if MazeStart.level == 'easy':
+            spriteUp = up
+        elif MazeStart.level == 'intermediate': 
+            spriteUp = mode.app.scaleImage(up, 6/7)
+        elif MazeStart.level == 'hard':
+            spriteUp = mode.app.scaleImage(up, 7/10)
+        upWidth, upHeight = spriteUp.size
+        cropUp = upWidth/4
+        
         mode.spritesUp = [ ]
         for i in range(4):
-            sprite = spriteUp.crop((64*i, 0, 64*(i+1), 64))
+            sprite = spriteUp.crop((cropUp*i, 0, cropUp*(i+1), cropUp))
             mode.spritesUp.append(sprite)
-        
-        spriteDown = mode.app.loadImage('down.png')
+
+        # Down
+        down = mode.app.loadImage('down.png')
+        if MazeStart.level == 'easy':
+            spriteDown = down
+        elif MazeStart.level == 'intermediate': 
+            spriteDown = mode.app.scaleImage(down, 6/7)
+        elif MazeStart.level == 'hard':
+            spriteDown = mode.app.scaleImage(down, 7/10)
+        downWidth, downHeight = spriteDown.size
+        cropDown = downWidth/4
+
         mode.spritesDown = [ ]
         for i in range(4):
-            sprite = spriteDown.crop((64*i, 0, 64*(i+1), 64))
+            sprite = spriteDown.crop((cropDown*i, 0, cropDown*(i+1), cropDown))
             mode.spritesDown.append(sprite)
 
-        spriteLeft = mode.app.loadImage('left.png')
+        # Left
+        left = mode.app.loadImage('left.png')
+        if MazeStart.level == 'easy':
+            spriteLeft = left
+        elif MazeStart.level == 'intermediate': 
+            spriteLeft = mode.app.scaleImage(left, 6/7)
+        elif MazeStart.level == 'hard':
+            spriteLeft = mode.app.scaleImage(left, 7/10)
+        leftWidth, leftHeight = spriteLeft.size
+        cropLeft = leftWidth/4
+
         mode.spritesLeft = [ ]
         for i in range(4):
-            sprite = spriteLeft.crop((64*i, 0, 64*(i+1), 64))
+            sprite = spriteLeft.crop((cropLeft*i, 0, cropLeft*(i+1), cropLeft))
             mode.spritesLeft.append(sprite)
         
-        spriteRight = mode.app.loadImage('right.png')
+        # Right
+        right = mode.app.loadImage('right.png')
+        if MazeStart.level == 'easy':
+            spriteRight = right
+        elif MazeStart.level == 'intermediate': 
+            spriteRight = mode.app.scaleImage(right, 6/7)
+        elif MazeStart.level == 'hard':
+            spriteRight = mode.app.scaleImage(right, 7/10)
+        rightWidth, rightHeight = spriteRight.size
+        cropRight = rightWidth/4
+
         mode.spritesRight = [ ]
         for i in range(4):
-            sprite = spriteRight.crop((64*i, 0, 64*(i+1), 64))
+            sprite = spriteRight.crop((cropRight*i, 0, cropRight*(i+1), cropRight))
             mode.spritesRight.append(sprite)
 
         mode.spriteCounter = 0
         
     def playerInCell(mode, playerX, playerY):
+        # Check whether player on the path rather than stepping on the trees
         row = int(playerY / mode.cellHeight)
         col = int(playerX / mode.cellWidth)
 
         return mode.mazeBoard[row][col] == 'lightgreen'
-
-    def createMap(mode):
-        #colors = [mode.tree, mode.path]
-        colors = ['lightgreen', 'forestgreen']
-        solvable = False
-        while solvable == False:
-            mode.mazeBoard = [[random.choice(colors) for i in range(12)]
-                               for i in range(8)]
-            #mode.mazeBoard[0][0] = mode.path
-            mode.mazeBoard[0][0] = 'lightgreen'
-            (path, solution) = MazeSolver(mode.mazeBoard).solve(printReport=True)
-            if solution != None:
-                solvable = True
-                mode.solution = path
 
     def timerFired(mode):
         mode.spriteCounter = ((1 + mode.spriteCounter) % len(mode.spritesUp))
@@ -1092,7 +1227,7 @@ class MazeGameMode(Mode):
         # Make sure that player doesn't go off the map horizontally
         if ((mode.playerX + dx) > mode.width) or ((mode.playerX + dx) < 0 ):
             pass
-        elif not mode.playerInCell((mode.playerX + dx), (mode.playerY + dy)):
+        elif not mode.playerInCell((mode.playerX + dx), (mode.playerY)):
             pass
         else:
             mode.playerX += dx
@@ -1100,13 +1235,30 @@ class MazeGameMode(Mode):
         # Make sure that player doesn't go off the map vertically
         if ((mode.playerY + dy) < 0) or ((mode.playerY + dy) > mode.height):
             pass
-        elif not mode.playerInCell((mode.playerX + dx), (mode.playerY + dy)):
+        elif not mode.playerInCell((mode.playerX), (mode.playerY + dy)):
             pass
         else:
             mode.playerY += dy
+        
+        # Check if players has reached bottom-right
+        # aka. solving the maze
+        row = int(mode.playerY / mode.cellHeight)
+        col = int(mode.playerX / mode.cellWidth)
+        if (row, col) == (mode.rows-1, mode.cols-1):
+            mode.win = True
+            mode.drawWinBool = True
+            if MazeStart.level == 'easy':
+                MazeGameMode.player.exp += 10
+            elif MazeStart.level == 'intermediate':
+                MazeGameMode.player.exp += 20
+            elif MazeStart.level == 'hard':
+                MazeGameMode.player.exp += 30
 
     def keyPressed(mode, event):
-        if (event.key == "Left"):
+        if event.key == 'Space':
+            if mode.drawWinBool:
+                mode.app.setActiveMode(mode.app.splashScreenMode)
+        elif (event.key == "Left"):
             mode.movePlayer(-mode.cellWidth, 0)
             mode.left = True
             mode.up, mode.down, mode.right = False, False, False
@@ -1122,7 +1274,6 @@ class MazeGameMode(Mode):
             mode.movePlayer(0, mode.cellHeight)
             mode.down = True
             mode.up, mode.left, mode.right = False, False, False
-        
         elif (event.key == 's'):
             # Learnt and modified from
             # https://realpython.com/python-csv/#reading-csv-files-with-csv
@@ -1155,13 +1306,22 @@ class MazeGameMode(Mode):
 
         mode.meetOpponent()
 
+    def drawWin(mode, canvas):
+        if mode.drawWinBool:
+            canvas.create_rectangle(0, 100, 600, 300, fill = '#EAF0F1')
+            canvas.create_text(300,150,text='You Solved it!',fill ='black',
+                               font = 'Georgia 24')
+            canvas.create_text(300, 200, text=f'Your exp: {mode.player.exp}',
+                               fill = 'black', font = 'Georgia 24')
+            canvas.create_text(300,250, text= "Press 'Space' to go back.",
+                               fill = 'black', font = 'Georgia 24')
+
     def drawWildPokemon(mode, canvas):
         # Draw wild Pokemon
         for (row, col) in mode.wildList:
             x = mode.cellWidth//2 + col*mode.cellWidth
             y = mode.cellHeight//2 + row*mode.cellHeight
             canvas.create_image(x, y, image=ImageTk.PhotoImage(mode.wildPic))
-
 
     def drawPlayer(mode, canvas):
         # Draw players with sprites based on the four directions
@@ -1186,21 +1346,18 @@ class MazeGameMode(Mode):
     def drawMaze(mode, canvas):
         for row in range(mode.rows):
             for col in range(mode.cols):
-                '''
+                image = (mode.tree if (mode.mazeBoard[row][col]=='forestgreen')
+                        else mode.path)
                 canvas.create_image(mode.cellWidth//2 + mode.cellWidth*col,
                                     mode.cellHeight//2 + mode.cellHeight*row,
-                                    image=ImageTk.PhotoImage(mode.mazeBoard[row][col]))
-                '''
-                canvas.create_rectangle(col*mode.cellWidth, row*mode.cellHeight,
-                                        (col+1)*mode.cellWidth,
-                                        (row+1)*mode.cellHeight,
-                                        fill = mode.mazeBoard[row][col])
+                                    image=ImageTk.PhotoImage(image))
                 
 
     def redrawAll(mode, canvas):
         mode.drawMaze(canvas)
         mode.drawPlayer(canvas)
         mode.drawWildPokemon(canvas)
+        mode.drawWin(canvas)
 
 
 class HelpMode(Mode):
@@ -1238,7 +1395,9 @@ class MyModalApp(ModalApp):
         app.mazeGameMode = MazeGameMode()
         app.helpMode = HelpMode()
         app.battleMode = BattleMode()
-        app.setActiveMode(app.mazeGameMode)
+        app.mazeStart = MazeStart()
+        app.mazeGameMode = MazeGameMode()
+        app.setActiveMode(app.splashScreenMode)
         app.timerDelay = 50
 
 app = MyModalApp(width=600, height=400)

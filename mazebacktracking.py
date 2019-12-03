@@ -2,6 +2,8 @@
 from cmu_112_graphics import *
 from tkinter import *
 from PIL import Image 
+import random
+import csv
 
 # Copied from:
 # http://www.cs.cmu.edu/~112/notes/notes-recursion-part2.html#genericBacktrackingSolver
@@ -130,8 +132,6 @@ class MazeSolver(BacktrackingPuzzleSolver):
         return MazeState(newSolutionPath)
 
     def stateSatisfiesConstraints(self, state):
-        #tree = app.loadImage('tree.png')
-        #path = Image.open('path.png')
         row, col = state.solutionPath[-1]
         if ((row < 0) or (row >= len(self.board)) or
             (col < 0) or (col >= len(self.board[0])) or
@@ -140,5 +140,4 @@ class MazeSolver(BacktrackingPuzzleSolver):
         else:
             if self.board[row][col] == 'lightgreen':
                 return True
-
 
