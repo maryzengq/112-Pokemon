@@ -81,11 +81,17 @@ class RegularGameMode(Mode):
         mode.startpic = mode.app.loadImage('gamemap.png')
         mode.scalePic = mode.app.scaleImage(mode.startpic, 3)
         mode.mapWidth, mode.mapHeight = mode.scalePic.size
+        mode.store = mode.app.loadImage('store.png')
+        mode.bag = mode.app.loadImage('bag.png')
+        mode.storeItem = mode.app.loadImage('storeitems.png')
+        mode.inventory = mode.app.loadImage('inventory.png')
 
         mode.scrollX, mode.scrollY = 0, 0
-        mode.scrollMargin = 70
+        mode.scrollMargin = 120
         mode.playerX, mode.playerY = mode.width/2, mode.height/2
         mode.r = 10
+
+        mode.backButton = '#DAE0E2'
     
         mode.mapLeftEnd = mode.width//2 - mode.mapWidth//2
         mode.mapRightEnd = mode.width//2 + mode.mapWidth//2
@@ -106,42 +112,65 @@ class RegularGameMode(Mode):
 
         mode.username = 'hi'
         mode.newPlayer = True
+
+        mode.storeFunction = False
+        mode.broke = False
+        mode.notEnoughMoney = False
+        mode.checkInventory = False
+
         mode.loadProgress()
-        
-    
+
+          
     def loadProgress(mode):
         # Learnt and modified from
         # https://realpython.com/python-csv/#reading-csv-files-with-csv
         charSet = set()
+        invenDict = dict()
 
         with open('PlayerProgress.csv', mode = 'r') as csvfile:
             csvReader = csv.reader(csvfile)
             next(csvReader, None)
             for row in csvReader:
-                charRaw = row[3]
+                charRaw = row[4]
                 charStr = charRaw.split(", ")
                 charStr[0], charStr[-1] = charStr[0][1:], charStr[-1][:-1]
                 for char in charStr:
                     char = char.strip(" '")
                     charSet.add(char)
+
+                invenRaw = row[5]
+                invenStr = invenRaw.split(", ")
+                invenStr[0], invenStr[-1] = invenStr[0][1:], invenStr[-1][:-1]
+                invenDict['Master Ball'] = int(invenStr[0])
+                invenDict['Poké Ball'] = int(invenStr[1])
+                invenDict['Full Restore'] = int(invenStr[2])
+                invenDict['Ultra Ball'] = int(invenStr[3])
+                invenDict['Poison'] = int(invenStr[4])
+                invenDict['Paralyze'] = int(invenStr[5])
+
                 mode.progressDict[row[0]] = {'exp': int(row[1]),
                                              'level': int(row[2]),
-                                             'characters': charSet}
+                                             'money': int(row[3]),
+                                             'characters': charSet,
+                                             'inventory': invenDict}
 
         print(mode.progressDict)
 
         mode.username = mode.getUserInput('What is your username').title()
+
         for key in mode.progressDict.keys():
             if mode.username == key:
                 RegularGameMode.player = Player(mode.progressDict[key]['exp'],
                                          mode.progressDict[key]['level'],
-                                         charSet)
+                                         mode.progressDict[key]['money'],
+                                         charSet, invenDict)
+                    
         return mode.progressDict
 
     def dropWildPokemon(mode):
         # Drop random, wild pokemon
-        for i in range(3):
-            wildX = random.randint(mode.mapLeftEnd + mode.scrollMargin,
+        for i in range(10):
+            wildX = random.randint(mode.mapLeftEnd+100 + mode.scrollMargin,
                                    mode.mapRightEnd - mode.scrollMargin)
             wildY = random.randint(mode.mapTopEnd + mode.scrollMargin,
                                    mode.mapDownEnd - mode.scrollMargin)
@@ -255,6 +284,11 @@ class RegularGameMode(Mode):
             mode.mapPlayerY += 10
             mode.down = True
             mode.up, mode.left, mode.right = False, False, False
+        elif (event.key == 'Space'):
+            if mode.broke:
+                mode.storeFunction = False
+            if mode.notEnoughMoney:
+                mode.notEnoughMoney = False
         
         elif (event.key == 's'):
             # Learnt and modified from
@@ -268,25 +302,181 @@ class RegularGameMode(Mode):
                 for row in csvReader:
                     if row[0] == mode.username:
                         mode.newPlayer = False
+                        inventoryAmount = [RegularGameMode.player.inventory['Master Ball'],
+                                    RegularGameMode.player.inventory['Poké Ball'],
+                                    RegularGameMode.player.inventory['Full Restore'],
+                                    RegularGameMode.player.inventory['Ultra Ball'],
+                                    RegularGameMode.player.inventory['Poison'],
+                                    RegularGameMode.player.inventory['Paralyze']]
                         info = [row[0], mode.player.exp,
                                 RegularGameMode.player.level,
-                                RegularGameMode.player.charList]
+                                RegularGameMode.player.money,
+                                RegularGameMode.player.charList,
+                                inventoryAmount]
                     else:
-                        info = [row[0], row[1], row[2], row[3]]
+                        info = [row[0], row[1], row[2], row[3], row[4], row[5]]
                     progressList.append(info)
-            
+
             with open('PlayerProgress.csv', mode = 'w') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow(['username', 'exp', 'level', 'chars'])
+                writer.writerow(['username','exp','level','chars','inventory'])
                 for person in progressList:
                     writer.writerow(person)
                 if mode.newPlayer:
-                    currentInfo = [mode.username, mode.player.exp,
-                                   RegularGameMode.player.level,
-                                   RegularGameMode.player.charList]
+                    inventoryAmount = [RegularGameMode.player.inventory['Master Ball'],
+                                    RegularGameMode.player.inventory['Poké Ball'],
+                                    RegularGameMode.player.inventory['Full Restore'],
+                                    RegularGameMode.player.inventory['Ultra Ball'],
+                                    RegularGameMode.player.inventory['Poison'],
+                                    RegularGameMode.player.inventory['Paralyze']]
+                    currentInfo = [username, RegularGameMode.player.exp,
+                                    RegularGameMode.player.level,
+                                    RegularGameMode.player.money,
+                                    RegularGameMode.player.charList,
+                                    inventoryAmount]
                     writer.writerow(currentInfo)
             
         mode.meetOpponent(mode.mapPlayerX, mode.mapPlayerY)
+
+    def checkBalance(mode):
+        if RegularGameMode.player.money <= 0:
+            mode.broke = True
+
+    def mousePressed(mode, event):
+        mode.checkBalance()
+        if (10 < event.x < 70) and (350 < event.y < 380):
+            if mode.storeFunction:
+                mode.storeFunction = False
+            elif mode.checkInventory:
+                mode.checkInventory = False
+            else:
+                mode.app.setActiveMode(mode.app.splashScreenMode)
+        elif (16 < event.x < 64) and (199 < event.y < 241):
+            mode.storeFunction = True
+        elif (16 < event.x < 64) and (99 < event.y < 158):
+            mode.checkInventory = True
+        
+        # Enable all the clicks when store is drawn
+        if (10 < event.x < 190) and (70 < event.y < 180):
+            if RegularGameMode.player.money - 100 > 0:
+                RegularGameMode.player.inventory['Master Ball'] = RegularGameMode.player.inventory.get('Master Ball', 0) + 1
+                RegularGameMode.player.money -= 100
+            else: mode.notEnoughMoney = True
+
+        elif (210 < event.x < 390) and (70 < event.y < 180):
+            if RegularGameMode.player.money - 200 > 0:
+                RegularGameMode.player.inventory['Full Restore'] = RegularGameMode.player.inventory.get('Full Restore', 0) + 1
+                RegularGameMode.player.money -= 200
+            else: mode.notEnoughMoney = True
+
+        elif (410 < event.x < 590) and (70 < event.y < 180):
+            if RegularGameMode.player.money - 250 > 0:
+                RegularGameMode.player.inventory['Poison'] = RegularGameMode.player.inventory.get('Poison', 0) + 1
+                RegularGameMode.player.money -= 250
+            else:mode.notEnoughMoney = True
+        
+        elif (10 < event.x < 190) and (220 < event.y < 325):
+            if RegularGameMode.player.money - 50 > 0:
+                RegularGameMode.player.inventory['Poké Ball'] = RegularGameMode.player.inventory.get('Poké Ball', 0) + 1
+                RegularGameMode.player.money -= 50
+            else: mode.notEnoughMoney = True
+        
+        elif (210 < event.x < 390) and (220 < event.y < 325):
+            if RegularGameMode.player.money - 70 > 0:
+                RegularGameMode.player.inventory['Ultra Ball'] = RegularGameMode.player.inventory.get('Ultra Ball', 0) + 1
+                RegularGameMode.player.money -= 70
+            else: mode.notEnoughMoney = True
+        
+        elif (410 < event.x < 590) and (220 < event.y < 325):
+            if RegularGameMode.player.money - 250 > 0:
+                RegularGameMode.player.inventory['Paralyze'] = RegularGameMode.player.inventory.get('Paralyze', 0) + 1
+                RegularGameMode.player.money -= 250
+            else: mode.notEnoughMoney = True
+
+    def drawInventory(mode, canvas):
+        if mode.checkInventory:
+            canvas.create_image(300,200, image=ImageTk.PhotoImage(mode.inventory))
+            #draw number of items owned
+            canvas.create_text(32, 120,
+                text=RegularGameMode.player.inventory['Master Ball'],
+                font='Courier 20 bold')
+            canvas.create_text(232, 120,
+                text=RegularGameMode.player.inventory['Full Restore'],
+                font='Courier 20 bold')
+            canvas.create_text(432, 120,
+                text=RegularGameMode.player.inventory['Poison'],
+                font='Courier 20 bold')
+            canvas.create_text(32, 275,
+                text=RegularGameMode.player.inventory['Poké Ball'],
+                font='Courier 20 bold')
+            canvas.create_text(232, 275,
+                text=RegularGameMode.player.inventory['Ultra Ball'],
+                font='Courier 20 bold')
+            canvas.create_text(432, 275,
+                text=RegularGameMode.player.inventory['Paralyze'],
+                font='Courier 20 bold')
+            canvas.create_text(316, 365,
+                               text=RegularGameMode.player.money,
+                               font='Courier 18 bold')
+
+
+    def drawStoreItems(mode, canvas):
+        if mode.storeFunction:
+            canvas.create_image(300, 200, image=ImageTk.PhotoImage(mode.storeItem))
+            canvas.create_rectangle(10, 20, 150, 40, fill = mode.backButton,
+                                    outline = 'white')
+            canvas.create_text(80, 30,
+                               text=f'Money Left: {RegularGameMode.player.money}',
+                               font='Courier 14')
+            canvas.create_rectangle(160, 360, 400, 380, fill = 'white',
+                                    outline = 'white')
+            canvas.create_text(280, 370, text='Click on the item to purchase.')
+
+            mode.drawItemsOwned(canvas)
+            mode.drawBroke(canvas)
+            mode.drawNotEnoughMoney(canvas)
+
+    def drawItemsOwned(mode, canvas):        
+        #draw number of items owned
+        canvas.create_text(143, 187,
+            text=RegularGameMode.player.inventory['Master Ball'],
+            font='Courier 14')
+        canvas.create_text(343, 187,
+            text=RegularGameMode.player.inventory['Full Restore'],
+            font='Courier 14')
+        canvas.create_text(543, 187,
+            text=RegularGameMode.player.inventory['Poison'],
+            font='Courier 14')
+        canvas.create_text(143, 337,
+            text=RegularGameMode.player.inventory['Poké Ball'],
+            font='Courier 14')
+        canvas.create_text(343, 337,
+            text=RegularGameMode.player.inventory['Ultra Ball'],
+            font='Courier 14')
+        canvas.create_text(543, 337,
+            text=RegularGameMode.player.inventory['Paralyze'],
+            font='Courier 14')
+
+    def drawBroke(mode, canvas):
+        if mode.broke:
+            canvas.create_rectangle(0,100,600,300, fill = 'white')
+            canvas.create_text(300,150, text="YOU ARE BROKE!",
+                               font = 'Courier 24 bold')
+            canvas.create_text(300,200, text="CAN'T BUY ANYTHING!",
+                               font = 'Courier 24 bold')
+            canvas.create_text(300,250, text="Press 'Space' to go back",
+                               font = 'Courier 22')
+    
+    def drawNotEnoughMoney(mode, canvas):
+        if mode.notEnoughMoney:
+            canvas.create_rectangle(0,100,600,300, fill = 'white')
+            canvas.create_text(300,150, text="YOU DON'T HAVE ENOUGH MONEY!",
+                               font = 'Courier 24 bold')
+            canvas.create_text(300,200, text="CAN'T BUY IT!",
+                               font = 'Courier 24 bold')
+            canvas.create_text(300,250, text="Press 'Space' to go back",
+                               font = 'Courier 22')
+                
 
     def drawPlayer(mode, canvas):
         # Draw players with sprites based on the four directions
@@ -335,6 +525,35 @@ class RegularGameMode(Mode):
             x -= mode.scrollX  
             y -= mode.scrollY
             canvas.create_image(x, y, image=ImageTk.PhotoImage(mode.wildPic))
+        
+        # Draw functionality column 
+        canvas.create_rectangle(0, 0, 80, 400, fill = '#7CEC9F',
+                                outline = '#10A881', width = 2)
+        canvas.create_text(40, 40, text = 'Menu', fill = '#218F76',
+                           font = 'Georgia 20 bold')
+        
+        # Draw 'Bag' button
+        canvas.create_text(40, 90, text = 'My Bag', fill = '#019031',
+                           font = 'Georgia 16')
+        canvas.create_image(40, 130, image=ImageTk.PhotoImage(mode.bag))
+
+        # Draw 'store'
+        canvas.create_text(40, 185, text = 'Store', fill = '#019031',
+                           font = 'Georgia 16')
+        canvas.create_image(40, 220, image=ImageTk.PhotoImage(mode.store))
+        
+        # Draw storeitems
+        mode.drawStoreItems(canvas)
+
+        # Draw inventory
+        mode.drawInventory(canvas)
+
+        # Draw 'Back' button
+        canvas.create_rectangle(10, 350, 70, 380, fill = mode.backButton)
+        canvas.create_text(40, 365, text = 'Back', fill = '#333945',
+                           font = 'Georgia 22')
+
+
 
 class BattleMode(Mode):
     def appStarted(mode):
@@ -368,9 +587,15 @@ class BattleMode(Mode):
         mode.winnter = 'no one'
         mode.decideWinnter = True
 
+        mode.captureBall = mode.app.loadImage('capture.png')
+        mode.drawCapture = False
+        mode.captureX, mode.captureY = 225, 340
+
         mode.displayCheatMove = False
         mode.cheatMove = ('hi', 0)
         mode.pause = False
+        mode.drawCompPKM = True
+        mode.captureComplete = False
 
         mode.initiatePokemon()
     
@@ -823,6 +1048,7 @@ class BattleMode(Mode):
         if mode.decideWinnter:
             if (mode.playerPKM.hp > 0) and (mode.compPKM.hp <= 0):
                 mode.player.exp += 10
+                mode.drawCapture = True
                 mode.drawWinner = True
                 mode.decideWinnter = False
                 mode.winner = 'You'
@@ -833,40 +1059,46 @@ class BattleMode(Mode):
                 
             elif (mode.compPKM.hp > 0) and (mode.playerPKM.hp <= 0):
                 mode.drawWinner = True
+                mode.captureComplete = True
                 mode.winner = 'Computer'
                 mode.decideWinnter = False
                 if mode.player.exp >= 5:
                     mode.player.exp -= 5
                 mode.player.updateLevel()
 
-    def timerFired(mode):
+    def playerMoveMove(mode):
         # Start drawing player move's sprite if conditions are met
+        if mode.drawPlayerMove:
+            mode.playerMove.spriteCounter = ((1 + mode.playerMove.spriteCounter)
+                                            % len(mode.playerMove.sprites))
+            mode.playerMove.startX += 11.25
+            mode.playerMove.startY -= 8
+            mode.checkPlayerHit()
+            if mode.playerDoneMoving: 
+                mode.drawPlayerMove = False
+                mode.displayPlayerDamage = True
+                mode.playerTurn = False
+                mode.compPKM.hp -= mode.damageOnComp
+                mode.actuallyRunCompMove = True
+
+    def compMoveMove(mode):
+        # Start drawing computer move's sprite if conditions are met
+        if mode.drawCompMove:
+            mode.compMove.spriteCounter = ((1 + mode.compMove.spriteCounter)
+                                            % len(mode.compMove.sprites))
+            mode.compMove.startX -= 11.25
+            mode.compMove.startY += 8
+            mode.checkCompHit()
+            if mode.compDoneMoving: 
+                mode.drawCompMove = False
+                mode.playerTurn = True
+                mode.playerPKM.hp -= mode.damageOnPlayer
+                mode.actuallyRunPlayerMove = True
+
+    def timerFired(mode):
         if not mode.pause:
-            if mode.drawPlayerMove:
-                mode.playerMove.spriteCounter = ((1 + mode.playerMove.spriteCounter)
-                                                % len(mode.playerMove.sprites))
-                mode.playerMove.startX += 11.25
-                mode.playerMove.startY -= 8
-                mode.checkPlayerHit()
-                if mode.playerDoneMoving: 
-                    mode.drawPlayerMove = False
-                    mode.displayPlayerDamage = True
-                    mode.playerTurn = False
-                    mode.compPKM.hp -= mode.damageOnComp
-                    mode.actuallyRunCompMove = True
-            
-            # Start drawing computer move's sprite if conditions are met
-            if mode.drawCompMove:
-                mode.compMove.spriteCounter = ((1 + mode.compMove.spriteCounter)
-                                                % len(mode.compMove.sprites))
-                mode.compMove.startX -= 11.25
-                mode.compMove.startY += 8
-                mode.checkCompHit()
-                if mode.compDoneMoving: 
-                    mode.drawCompMove = False
-                    mode.playerTurn = True
-                    mode.playerPKM.hp -= mode.damageOnPlayer
-                    mode.actuallyRunPlayerMove = True
+            mode.playerMoveMove()
+            mode.compMoveMove()
 
             # Computer and player take turns to attack
             if ((mode.playerTurn) and (mode.compDone) and (not mode.drawCompMove)
@@ -879,8 +1111,22 @@ class BattleMode(Mode):
                 mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
                 mode.compMakeMove()
                 mode.actuallyRunCompMove = False
+            
+            mode.capture()
 
             mode.determineWiner(mode.playerPKM.hp, mode.compPKM.hp)
+
+    def capture(mode):
+        if mode.drawCapture:
+            mode.captureX += 11.25
+            mode.captureY -= 8
+            # Check if the position of the capture ball has reached 
+            # computer's pokemon yet
+            if ((440 < mode.captureX < 460) and
+                (170 < mode.captureY < 190)):
+                mode.drawCapture = False
+                mode.captureComplete = True
+                mode.drawCompPKM = False
 
     def drawMove(mode, canvas):
         if mode.drawPlayerMove:
@@ -891,6 +1137,11 @@ class BattleMode(Mode):
             sprite = mode.compMove.sprites[mode.compMove.spriteCounter]
             canvas.create_image(mode.compMove.startX, mode.compMove.startY,
                                 image=ImageTk.PhotoImage(sprite))
+        
+        elif mode.drawCapture:
+            canvas.create_image(mode.captureX, mode.captureY,
+                                image=ImageTk.PhotoImage(mode.captureBall))
+
     
     def drawHPBar(mode, canvas):
         canvas.create_text(82,30, text = (f'{int(mode.playerPKM.hp)}/'
@@ -910,18 +1161,24 @@ class BattleMode(Mode):
                             image=ImageTk.PhotoImage(mode.compPKM.frontS))
 
     def drawResult(mode, canvas):
-        if mode.drawWinner:
-            canvas.create_rectangle(0, 100, 600, 300, fill = '#EAF0F1')
-            canvas.create_text(300,120,text=f'{mode.winner} WON!',fill ='black',
-                               font = 'Georgia 24')
-            canvas.create_text(300, 160, text=f'Your exp: {mode.player.exp}',
-                               fill = 'black', font = 'Georgia 24')
-            canvas.create_text(300, 200, text='Now your Pokemon list is:',
+        if mode.drawWinner and mode.captureComplete:
+            canvas.create_rectangle(0, 240, 600, 400, fill = '#EAF0F1')
+            canvas.create_text(300,260,text=f'{mode.winner} WON!',fill ='black',
+                               font = 'Georgia 20')
+            canvas.create_text(300, 290, text=f'Your exp: {mode.player.exp}',
+                               fill = 'black', font = 'Georgia 20')
+            canvas.create_text(300, 320, text='Now your Pokemon list is:',
                                fill = 'black', font = 'Georgia 16')
-            canvas.create_text(300, 220, text = f'{mode.player.charList}',
+            canvas.create_text(300, 340, text = f'{mode.player.charList}',
                                fill = 'black', font = 'Georgia 16')
-            canvas.create_text(300,260, text= "Press 'Space' to go back.",
-                               fill = 'black', font = 'Georgia 24')
+            canvas.create_text(300,370, text= "Press 'Space' to go back.",
+                               fill = 'black', font = 'Georgia 20')
+
+            if mode.winner == 'You':
+                canvas.create_rectangle(30, 150, 280, 180, fill = '#EAF0F1')
+                canvas.create_text(150, 165,
+                               text = f'You just captured {mode.compPKM.name}!',
+                               font = 'Georgia 16')
 
     def drawCheatMove(mode, canvas):
         if mode.displayCheatMove:
@@ -933,13 +1190,15 @@ class BattleMode(Mode):
         canvas.create_image(mode.width/2, mode.height/2,
                             image=ImageTk.PhotoImage(mode.scalePic))
         # Draw Pokemon
-        canvas.create_image(450,180,image=ImageTk.PhotoImage(mode.compPKM.frontB))
+        if mode.drawCompPKM:
+            canvas.create_image(450,180,image=ImageTk.PhotoImage(mode.compPKM.frontB))
         canvas.create_image(225,340,image=ImageTk.PhotoImage(mode.playerPKM.backB))
 
         mode.drawHPBar(canvas)
         mode.drawMove(canvas)
         mode.drawResult(canvas)
         mode.drawCheatMove(canvas)
+
 
 class MazeStart(Mode):
     # User can choose different difficulty levels
@@ -1016,6 +1275,7 @@ class MazeGameMode(Mode):
         mode.progressDict = dict()
         mode.win = False
         mode.drawWinBool = False
+        mode.backButton = '#DAE0E2'
 
         # Different levels will have different numbers of rows and cols
         if MazeStart.level == 'easy':
@@ -1095,29 +1355,46 @@ class MazeGameMode(Mode):
         # Learnt and modified from
         # https://realpython.com/python-csv/#reading-csv-files-with-csv
         charSet = set()
+        invenDict = dict()
 
         with open('PlayerProgress.csv', mode = 'r') as csvfile:
             csvReader = csv.reader(csvfile)
             next(csvReader, None)
             for row in csvReader:
-                charRaw = row[3]
+                charRaw = row[4]
                 charStr = charRaw.split(", ")
                 charStr[0], charStr[-1] = charStr[0][1:], charStr[-1][:-1]
                 for char in charStr:
                     char = char.strip(" '")
                     charSet.add(char)
+
+                invenRaw = row[5]
+                invenStr = invenRaw.split(", ")
+                invenStr[0], invenStr[-1] = invenStr[0][1:], invenStr[-1][:-1]
+                invenDict['Master Ball'] = int(invenStr[0])
+                invenDict['Poké Ball'] = int(invenStr[1])
+                invenDict['Full Restore'] = int(invenStr[2])
+                invenDict['Ultra Ball'] = int(invenStr[3])
+                invenDict['Poison'] = int(invenStr[4])
+                invenDict['Paralyze'] = int(invenStr[5])
+
                 mode.progressDict[row[0]] = {'exp': int(row[1]),
                                              'level': int(row[2]),
-                                             'characters': charSet}
+                                             'money': int(row[3]),
+                                             'characters': charSet,
+                                             'inventory': invenDict}
 
         print(mode.progressDict)
 
         mode.username = mode.getUserInput('What is your username').title()
+
         for key in mode.progressDict.keys():
             if mode.username == key:
-                RegularGameMode.player = Player(mode.progressDict[key]['exp'],
+                MazeGameMode.player = Player(mode.progressDict[key]['exp'],
                                          mode.progressDict[key]['level'],
-                                         charSet)
+                                         mode.progressDict[key]['money'],
+                                         charSet, invenDict)
+                    
         return mode.progressDict
 
     def dropWildPokemon(mode):
@@ -1128,7 +1405,7 @@ class MazeGameMode(Mode):
                 if (row,col) in mode.solution:
                     availableCell.append((row, col))
 
-        for _ in range(5):
+        for _ in range(10):
             dropIndex = random.randint(0, len(availableCell)-1)
             mode.wildList.append(availableCell[dropIndex])
 
@@ -1286,25 +1563,52 @@ class MazeGameMode(Mode):
                 for row in csvReader:
                     if row[0] == mode.username:
                         mode.newPlayer = False
+                        inventoryAmount = [MazeGameMode.player.inventory['Master Ball'],
+                                    MazeGameMode.player.inventory['Poké Ball'],
+                                    MazeGameMode.player.inventory['Full Restore'],
+                                    MazeGameMode.player.inventory['Ultra Ball'],
+                                    MazeGameMode.player.inventory['Poison'],
+                                    MazeGameMode.player.inventory['Paralyze']]
                         info = [row[0], mode.player.exp,
-                                RegularGameMode.player.level,
-                                RegularGameMode.player.charList]
+                                MazeGameMode.player.level,
+                                MazeGameMode.player.money,
+                                MazeGameMode.player.charList,
+                                inventoryAmount]
                     else:
-                        info = [row[0], row[1], row[2], row[3]]
+                        info = [row[0], row[1], row[2], row[3], row[4], row[5]]
                     progressList.append(info)
-            
+
             with open('PlayerProgress.csv', mode = 'w') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow(['username', 'exp', 'level', 'chars'])
+                writer.writerow(['username','exp','level','chars','inventory'])
                 for person in progressList:
                     writer.writerow(person)
                 if mode.newPlayer:
-                    currentInfo = [mode.username, mode.player.exp,
-                                   RegularGameMode.player.level,
-                                   RegularGameMode.player.charList]
+                    inventoryAmount = [MazeGameMode.player.inventory['Master Ball'],
+                                    MazeGameMode.player.inventory['Poké Ball'],
+                                    MazeGameMode.player.inventory['Full Restore'],
+                                    MazeGameMode.player.inventory['Ultra Ball'],
+                                    MazeGameMode.player.inventory['Poison'],
+                                    MazeGameMode.player.inventory['Paralyze']]
+                    currentInfo = [username, MazeGameMode.player.exp,
+                                    MazeGameMode.player.level,
+                                    MazeGameMode.player.money,
+                                    MazeGameMode.player.charList,
+                                    inventoryAmount]
                     writer.writerow(currentInfo)
 
         mode.meetOpponent()
+
+    def mouseMoved(mode, event):
+        if (500 < event.x < 570) and (350 < event.y < 380):
+            mode.backButton = '#7B8788'
+        else:
+            mode.backButton = '#DAE0E2'
+
+    def mousePressed(mode, event):
+        if (500 < event.x < 570) and (350 < event.y < 380):
+            mode.app.setActiveMode(mode.app.splashScreenMode)
+
 
     def drawWin(mode, canvas):
         if mode.drawWinBool:
@@ -1359,6 +1663,11 @@ class MazeGameMode(Mode):
         mode.drawWildPokemon(canvas)
         mode.drawWin(canvas)
 
+        # Draw 'Back' buttom
+        canvas.create_rectangle(500, 350, 570, 380, fill = mode.backButton)
+        canvas.create_text(535, 365, text = 'Back', fill = '#333945',
+                           font = 'Georgia 20')
+
 
 class HelpMode(Mode):
     def appStarted(mode):
@@ -1385,7 +1694,6 @@ class HelpMode(Mode):
               '''  
         canvas.create_text(mode.width/2, mode.height/2, text=msg,fill = 'white',
                            font = 'Georgia 18')
-
 
 
 class MyModalApp(ModalApp):

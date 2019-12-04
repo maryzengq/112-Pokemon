@@ -1,12 +1,28 @@
 class Player(object):
-    def __init__(self, exp, level, chars = None):
+    def __init__(self, exp, level, money = None, chars = None, inventory = None):
         self.exp = exp
         self.level = level
+        if money == None:
+            self.money = 1000
+        else:
+            self.money = money
+        
         # Player's starting character list
         if chars == None:
             self.charList = set(['Bulbasaur', 'Charmander', 'Squirtle'])
         else:
             self.charList = chars
+        
+        if inventory == None:
+            self.inventory = dict()
+            self.inventory['Master Ball'] = 0
+            self.inventory['Poké Ball'] = 0
+            self.inventory['Full Restore'] = 0
+            self.inventory['Ultra Ball'] = 0
+            self.inventory['Poison'] = 0
+            self.inventory['Paralyze'] = 0
+        else:
+            self.inventory = inventory
 
     def updateLevel(self):
         # Calculate player's level based on its exp 
