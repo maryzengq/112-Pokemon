@@ -357,41 +357,42 @@ class RegularGameMode(Mode):
             mode.checkInventory = True
         
         # Enable all the clicks when store is drawn
-        if (10 < event.x < 190) and (70 < event.y < 180):
-            if RegularGameMode.player.money - 100 > 0:
-                RegularGameMode.player.inventory['Master Ball'] = RegularGameMode.player.inventory.get('Master Ball', 0) + 1
-                RegularGameMode.player.money -= 100
-            else: mode.notEnoughMoney = True
+        if mode.storeFunction:
+            if (10 < event.x < 190) and (70 < event.y < 180):
+                if RegularGameMode.player.money - 100 > 0:
+                    RegularGameMode.player.inventory['Master Ball'] = RegularGameMode.player.inventory.get('Master Ball', 0) + 1
+                    RegularGameMode.player.money -= 100
+                else: mode.notEnoughMoney = True
 
-        elif (210 < event.x < 390) and (70 < event.y < 180):
-            if RegularGameMode.player.money - 200 > 0:
-                RegularGameMode.player.inventory['Full Restore'] = RegularGameMode.player.inventory.get('Full Restore', 0) + 1
-                RegularGameMode.player.money -= 200
-            else: mode.notEnoughMoney = True
+            elif (210 < event.x < 390) and (70 < event.y < 180):
+                if RegularGameMode.player.money - 200 > 0:
+                    RegularGameMode.player.inventory['Full Restore'] = RegularGameMode.player.inventory.get('Full Restore', 0) + 1
+                    RegularGameMode.player.money -= 200
+                else: mode.notEnoughMoney = True
 
-        elif (410 < event.x < 590) and (70 < event.y < 180):
-            if RegularGameMode.player.money - 250 > 0:
-                RegularGameMode.player.inventory['Poison'] = RegularGameMode.player.inventory.get('Poison', 0) + 1
-                RegularGameMode.player.money -= 250
-            else:mode.notEnoughMoney = True
-        
-        elif (10 < event.x < 190) and (220 < event.y < 325):
-            if RegularGameMode.player.money - 50 > 0:
-                RegularGameMode.player.inventory['Poké Ball'] = RegularGameMode.player.inventory.get('Poké Ball', 0) + 1
-                RegularGameMode.player.money -= 50
-            else: mode.notEnoughMoney = True
-        
-        elif (210 < event.x < 390) and (220 < event.y < 325):
-            if RegularGameMode.player.money - 70 > 0:
-                RegularGameMode.player.inventory['Ultra Ball'] = RegularGameMode.player.inventory.get('Ultra Ball', 0) + 1
-                RegularGameMode.player.money -= 70
-            else: mode.notEnoughMoney = True
-        
-        elif (410 < event.x < 590) and (220 < event.y < 325):
-            if RegularGameMode.player.money - 250 > 0:
-                RegularGameMode.player.inventory['Paralyze'] = RegularGameMode.player.inventory.get('Paralyze', 0) + 1
-                RegularGameMode.player.money -= 250
-            else: mode.notEnoughMoney = True
+            elif (410 < event.x < 590) and (70 < event.y < 180):
+                if RegularGameMode.player.money - 250 > 0:
+                    RegularGameMode.player.inventory['Poison'] = RegularGameMode.player.inventory.get('Poison', 0) + 1
+                    RegularGameMode.player.money -= 250
+                else:mode.notEnoughMoney = True
+            
+            elif (10 < event.x < 190) and (220 < event.y < 325):
+                if RegularGameMode.player.money - 50 > 0:
+                    RegularGameMode.player.inventory['Poké Ball'] = RegularGameMode.player.inventory.get('Poké Ball', 0) + 1
+                    RegularGameMode.player.money -= 50
+                else: mode.notEnoughMoney = True
+            
+            elif (210 < event.x < 390) and (220 < event.y < 325):
+                if RegularGameMode.player.money - 70 > 0:
+                    RegularGameMode.player.inventory['Ultra Ball'] = RegularGameMode.player.inventory.get('Ultra Ball', 0) + 1
+                    RegularGameMode.player.money -= 70
+                else: mode.notEnoughMoney = True
+            
+            elif (410 < event.x < 590) and (220 < event.y < 325):
+                if RegularGameMode.player.money - 250 > 0:
+                    RegularGameMode.player.inventory['Paralyze'] = RegularGameMode.player.inventory.get('Paralyze', 0) + 1
+                    RegularGameMode.player.money -= 250
+                else: mode.notEnoughMoney = True
 
     def drawInventory(mode, canvas):
         if mode.checkInventory:
@@ -423,14 +424,9 @@ class RegularGameMode(Mode):
     def drawStoreItems(mode, canvas):
         if mode.storeFunction:
             canvas.create_image(300, 200, image=ImageTk.PhotoImage(mode.storeItem))
-            canvas.create_rectangle(10, 20, 150, 40, fill = mode.backButton,
-                                    outline = 'white')
-            canvas.create_text(80, 30,
-                               text=f'Money Left: {RegularGameMode.player.money}',
-                               font='Courier 14')
-            canvas.create_rectangle(160, 360, 400, 380, fill = 'white',
-                                    outline = 'white')
-            canvas.create_text(280, 370, text='Click on the item to purchase.')
+            canvas.create_text(313, 372,
+                               text=RegularGameMode.player.money,
+                               font='Courier 18')
 
             mode.drawItemsOwned(canvas)
             mode.drawBroke(canvas)
@@ -554,7 +550,6 @@ class RegularGameMode(Mode):
                            font = 'Georgia 22')
 
 
-
 class BattleMode(Mode):
     def appStarted(mode):
         mode.pic = mode.app.loadImage('bi.png')
@@ -562,6 +557,7 @@ class BattleMode(Mode):
         mode.player = RegularGameMode.player
         mode.playerPKM = Pokemon('Squirtle', mode.player.level, mode)
         mode.compPKM = Pokemon('Squirtle', mode.player.level, mode)
+        mode.bag = mode.app.loadImage('bag.png')
 
         mode.playerTurn = False
         mode.battleOver = False
@@ -930,7 +926,6 @@ class BattleMode(Mode):
             mode.playerTurn= False
             mode.compMakeMove()
         
-
     def cheat(mode):
         # Ask if the player is willing to sacrifice 10% of its HP to know the
         # best move against computer
@@ -946,7 +941,6 @@ class BattleMode(Mode):
         else:
             mode.pause = False
         
-
     def playerMakeMove(mode): 
         if mode.playerPKM.hp > 0:  
             askMoveMsg = (f'The moves avaliable are {mode.playerPKM.moves}. '
@@ -969,8 +963,7 @@ class BattleMode(Mode):
                                                 mode.compPKM.type_)
             
             mode.playerDone = True
-
-        
+    
     def checkPlayerHit(mode):
         # Check if the position of the move drawn has reached 
         # computer's pokemon yet
@@ -1141,8 +1134,7 @@ class BattleMode(Mode):
         elif mode.drawCapture:
             canvas.create_image(mode.captureX, mode.captureY,
                                 image=ImageTk.PhotoImage(mode.captureBall))
-
-    
+   
     def drawHPBar(mode, canvas):
         canvas.create_text(82,30, text = (f'{int(mode.playerPKM.hp)}/'
                                           f'{mode.playerPKM.oghp}'),
@@ -1194,6 +1186,9 @@ class BattleMode(Mode):
             canvas.create_image(450,180,image=ImageTk.PhotoImage(mode.compPKM.frontB))
         canvas.create_image(225,340,image=ImageTk.PhotoImage(mode.playerPKM.backB))
 
+        # Draw Inventory Icon
+        canvas.create_image(30,220, image=ImageTk.PhotoImage(mode.store))
+
         mode.drawHPBar(canvas)
         mode.drawMove(canvas)
         mode.drawResult(canvas)
@@ -1223,6 +1218,8 @@ class MazeStart(Mode):
             (280 < event.y < 310)):
             MazeStart.level = 'hard'
             mode.app.setActiveMode(mode.app.mazeGameMode)
+        elif (10 < event.x < 70) and (350 < event.y < 380):
+            mode.app.setActiveMode(mode.app.splashScreenMode)
 
     def mouseMoved(mode, event):
         if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
@@ -1268,6 +1265,11 @@ class MazeStart(Mode):
         canvas.create_text(mode.width/2, 295,
                            text='Hard', fill = '#EAF0F1',
                            font='Georgia 20')
+        
+        # Draw 'Back' button
+        canvas.create_rectangle(10, 350, 70, 380, fill = '#DAE0E2')
+        canvas.create_text(40, 365, text = 'Back', fill = '#333945',
+                           font = 'Georgia 22')
 
 class MazeGameMode(Mode):
     player = Player(0,1)
@@ -1606,8 +1608,8 @@ class MazeGameMode(Mode):
             mode.backButton = '#DAE0E2'
 
     def mousePressed(mode, event):
-        if (500 < event.x < 570) and (350 < event.y < 380):
-            mode.app.setActiveMode(mode.app.splashScreenMode)
+        if (10 < event.x < 70) and (350 < event.y < 380):
+            mode.app.setActiveMode(mode.app.mazeStart)
 
 
     def drawWin(mode, canvas):
@@ -1664,9 +1666,9 @@ class MazeGameMode(Mode):
         mode.drawWin(canvas)
 
         # Draw 'Back' buttom
-        canvas.create_rectangle(500, 350, 570, 380, fill = mode.backButton)
-        canvas.create_text(535, 365, text = 'Back', fill = '#333945',
-                           font = 'Georgia 20')
+        canvas.create_rectangle(10, 350, 70, 380, fill = '#DAE0E2')
+        canvas.create_text(40, 365, text = 'Back', fill = '#333945',
+                           font = 'Georgia 22')
 
 
 class HelpMode(Mode):
