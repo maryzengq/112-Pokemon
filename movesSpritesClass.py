@@ -1,3 +1,5 @@
+# This is the file where I kept my move sprites in a class
+
 # Copied from: http://www.cs.cmu.edu/~112/notes/hw9.html
 from cmu_112_graphics import *
 from tkinter import *
@@ -56,7 +58,7 @@ class MovesSprites(object):
         'Double Edge': 'normal.png',
         'Absorb': 'grass.png', 
         'Fairy Wind': 'fairy.png', 
-        'Struggle Bug':'bug png', 
+        'Struggle Bug':'bug.png', 
         'Draining Kiss': 'fairy.png',
         'Bug Buzz': 'bug.png',
         'Skull Bash': 'normal.png'}

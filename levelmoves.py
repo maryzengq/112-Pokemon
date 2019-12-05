@@ -1,3 +1,6 @@
+# This is the file where I kept my addMoves ditionary so that Pokémon's moves 
+# are depended on its level.
+
 # Copied from: http://www.cs.cmu.edu/~112/notes/hw9.html
 from cmu_112_graphics import *
 from tkinter import *

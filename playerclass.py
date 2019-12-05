@@ -1,9 +1,12 @@
+# This is the player class I use in the main game
+
+
 class Player(object):
     def __init__(self, exp, level, money = None, chars = None, inventory = None):
         self.exp = exp
         self.level = level
         if money == None:
-            self.money = 1000
+            self.money = 100
         else:
             self.money = money
         
@@ -20,7 +23,7 @@ class Player(object):
             self.inventory['Full Restore'] = 0
             self.inventory['Ultra Ball'] = 0
             self.inventory['Poison'] = 0
-            self.inventory['Paralyze'] = 0
+            self.inventory['Great Ball'] = 0
         else:
             self.inventory = inventory
 

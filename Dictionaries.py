@@ -1,3 +1,6 @@
+# This is a file where I kept my raw dictionaries data during planning
+
+
 movesPower = {
                     'Nuzzle': 20,
                     'Quick Attack': 40,

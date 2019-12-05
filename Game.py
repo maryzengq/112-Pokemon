@@ -1,8 +1,12 @@
+# This file is the same as the 'Game.py'
+# I use it to test my code when I added new features
+
 # Copied from: http://www.cs.cmu.edu/~112/notes/hw9.html
 from cmu_112_graphics import *
 from tkinter import *
 from PIL import Image 
-import random 
+import random
+from random import randint, choice
 from pokemonclass import Pokemon
 from movesSpritesClass import MovesSprites
 from levelmoves import addMoves
@@ -16,8 +20,11 @@ import csv
 class SplashScreenMode(Mode):
     def appStarted(mode):
         mode.startpic = mode.app.loadImage('splash.jpg')
+        mode.ins = mode.app.loadImage('instruction.png')
         mode.colorWhenMoveRegular = '#26ae60'
         mode.colorWhenMoveMaze = '#26ae60'
+        mode.colorWhenIns = '#26ae60'
+        mode.showInstruction = False
 
     def mousePressed(mode, event):
         if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
@@ -26,17 +33,37 @@ class SplashScreenMode(Mode):
         elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
             (235 < event.y < 265)):
             mode.app.setActiveMode(mode.app.mazeStart)
+        elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (275 < event.y < 305)):
+            mode.showInstruction = True
+        
+        if mode.showInstruction:
+            if (10 < event.x < 70) and (350 < event.y < 380):
+                mode.showInstruction = False
 
     def mouseMoved(mode, event):
         if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
             (175 < event.y < 205)):
             mode.colorWhenMoveRegular = "#218F76"
         elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
-            (235 < event.y < 265)):
+            (225 < event.y < 255)):
             mode.colorWhenMoveMaze = "#218F76"
+        elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
+            (275 < event.y < 305)):
+            mode.colorWhenIns = "#218F76"
         else:
             mode.colorWhenMoveRegular = '#26ae60'
             mode.colorWhenMoveMaze = '#26ae60'
+            mode.colorWhenIns = '#26ae60'
+
+    def drawIns(mode, canvas):
+        if mode.showInstruction:
+            canvas.create_image(300,200, image=ImageTk.PhotoImage(mode.ins))
+
+            # Draw 'Back' button
+            canvas.create_rectangle(10, 350, 70, 380, fill = '#DAE0E2')
+            canvas.create_text(40, 365, text = 'Back', fill = '#333945',
+                            font = 'Georgia 22')
 
 
     def redrawAll(mode, canvas):
@@ -55,10 +82,16 @@ class SplashScreenMode(Mode):
                            font='Georgia 20')
         
         # Draw maze mode
-        canvas.create_rectangle(mode.width/2-100, 235, mode.width/2+100, 265,
+        canvas.create_rectangle(mode.width/2-100, 225, mode.width/2+100, 255,
                                 fill = mode.colorWhenMoveMaze, outline = '#10A881')
-        canvas.create_text(mode.width/2, 250,
+        canvas.create_text(mode.width/2, 240,
                            text='Maze Mode', fill = '#EAF0F1',
+                           font='Georgia 20')
+        
+        # Draw Instruction
+        canvas.create_rectangle(mode.width/2-100, 275, mode.width/2+100, 305,
+                                fill = mode.colorWhenIns,outline = '#10A881')
+        canvas.create_text(mode.width/2,290, text='Instruction', fill = '#EAF0F1',
                            font='Georgia 20')
 
         # Draw reminder for progress
@@ -73,6 +106,8 @@ class SplashScreenMode(Mode):
                            text =("Use the same username "
                                   "to load your progress."),
                            font = 'Georgia 16')
+        
+        mode.drawIns(canvas)
 
 class RegularGameMode(Mode):
     player = Player(0, 1)
@@ -89,7 +124,6 @@ class RegularGameMode(Mode):
         mode.scrollX, mode.scrollY = 0, 0
         mode.scrollMargin = 120
         mode.playerX, mode.playerY = mode.width/2, mode.height/2
-        mode.r = 10
 
         mode.backButton = '#DAE0E2'
     
@@ -117,6 +151,7 @@ class RegularGameMode(Mode):
         mode.broke = False
         mode.notEnoughMoney = False
         mode.checkInventory = False
+        mode.displayProgress = True
 
         mode.loadProgress()
 
@@ -171,9 +206,19 @@ class RegularGameMode(Mode):
         # Drop random, wild pokemon
         for i in range(10):
             wildX = random.randint(mode.mapLeftEnd+100 + mode.scrollMargin,
-                                   mode.mapRightEnd - mode.scrollMargin)
+                                    mode.mapRightEnd - mode.scrollMargin)
             wildY = random.randint(mode.mapTopEnd + mode.scrollMargin,
-                                   mode.mapDownEnd - mode.scrollMargin)
+                                    mode.mapDownEnd - mode.scrollMargin)
+            while (((-80 < wildX < 200) and (-130 < wildY < 110)) or
+                   ((420 < wildX < 700) and (-130 < wildY < 110)) or
+                   ((-50 < wildX < 310) and (260 < wildY < 500)) or
+                   (wildX < -130) or (wildX > 740) or
+                   (wildY < -210) or (wildY > 600)):
+                wildX = random.randint(mode.mapLeftEnd+100 + mode.scrollMargin,
+                                    mode.mapRightEnd - mode.scrollMargin)
+                wildY = random.randint(mode.mapTopEnd + mode.scrollMargin,
+                                    mode.mapDownEnd - mode.scrollMargin)
+            
             mode.wildList.append((wildX, wildY))
         
   
@@ -264,6 +309,7 @@ class RegularGameMode(Mode):
         mode.spriteCounter = ((1 + mode.spriteCounter) % len(mode.spritesUp))
 
     def keyPressed(mode, event):
+        mode.displayProgress = False
         if (event.key == "Left"):
             mode.movePlayer(-10, 0)
             mode.mapPlayerX -= 10
@@ -359,63 +405,46 @@ class RegularGameMode(Mode):
         # Enable all the clicks when store is drawn
         if mode.storeFunction:
             if (10 < event.x < 190) and (70 < event.y < 180):
-                if RegularGameMode.player.money - 100 > 0:
+                if RegularGameMode.player.money - 100 >= 0:
                     RegularGameMode.player.inventory['Master Ball'] = RegularGameMode.player.inventory.get('Master Ball', 0) + 1
                     RegularGameMode.player.money -= 100
                 else: mode.notEnoughMoney = True
 
             elif (210 < event.x < 390) and (70 < event.y < 180):
-                if RegularGameMode.player.money - 200 > 0:
+                if RegularGameMode.player.money - 200 >= 0:
                     RegularGameMode.player.inventory['Full Restore'] = RegularGameMode.player.inventory.get('Full Restore', 0) + 1
                     RegularGameMode.player.money -= 200
                 else: mode.notEnoughMoney = True
 
             elif (410 < event.x < 590) and (70 < event.y < 180):
-                if RegularGameMode.player.money - 250 > 0:
+                if RegularGameMode.player.money - 250 >= 0:
                     RegularGameMode.player.inventory['Poison'] = RegularGameMode.player.inventory.get('Poison', 0) + 1
                     RegularGameMode.player.money -= 250
                 else:mode.notEnoughMoney = True
             
             elif (10 < event.x < 190) and (220 < event.y < 325):
-                if RegularGameMode.player.money - 50 > 0:
+                if RegularGameMode.player.money - 30 >= 0:
                     RegularGameMode.player.inventory['Poké Ball'] = RegularGameMode.player.inventory.get('Poké Ball', 0) + 1
-                    RegularGameMode.player.money -= 50
+                    RegularGameMode.player.money -= 30
                 else: mode.notEnoughMoney = True
             
             elif (210 < event.x < 390) and (220 < event.y < 325):
-                if RegularGameMode.player.money - 70 > 0:
+                if RegularGameMode.player.money - 70 >= 0:
                     RegularGameMode.player.inventory['Ultra Ball'] = RegularGameMode.player.inventory.get('Ultra Ball', 0) + 1
                     RegularGameMode.player.money -= 70
                 else: mode.notEnoughMoney = True
             
             elif (410 < event.x < 590) and (220 < event.y < 325):
-                if RegularGameMode.player.money - 250 > 0:
+                if RegularGameMode.player.money - 50 >= 0:
                     RegularGameMode.player.inventory['Great Ball'] = RegularGameMode.player.inventory.get('Great Ball', 0) + 1
-                    RegularGameMode.player.money -= 250
+                    RegularGameMode.player.money -= 50
                 else: mode.notEnoughMoney = True
 
     def drawInventory(mode, canvas):
         if mode.checkInventory:
             canvas.create_image(300,200, image=ImageTk.PhotoImage(mode.inventory))
             #draw number of items owned
-            canvas.create_text(32, 120,
-                text=RegularGameMode.player.inventory['Master Ball'],
-                font='Courier 20 bold')
-            canvas.create_text(232, 120,
-                text=RegularGameMode.player.inventory['Full Restore'],
-                font='Courier 20 bold')
-            canvas.create_text(432, 120,
-                text=RegularGameMode.player.inventory['Poison'],
-                font='Courier 20 bold')
-            canvas.create_text(32, 275,
-                text=RegularGameMode.player.inventory['Poké Ball'],
-                font='Courier 20 bold')
-            canvas.create_text(232, 275,
-                text=RegularGameMode.player.inventory['Ultra Ball'],
-                font='Courier 20 bold')
-            canvas.create_text(432, 275,
-                text=RegularGameMode.player.inventory['Great Ball'],
-                font='Courier 20 bold')
+            mode.drawItemsOwned(canvas)
             canvas.create_text(316, 365,
                                text=RegularGameMode.player.money,
                                font='Courier 18 bold')
@@ -450,8 +479,8 @@ class RegularGameMode(Mode):
             text=RegularGameMode.player.inventory['Ultra Ball'],
             font='Courier 14')
         canvas.create_text(543, 337,
-            text=RegularGameMode.player.inventory['Great Ball'],
-            font='Courier 14')
+            text = RegularGameMode.player.inventory['Great Ball'],
+            font = 'Courier 14')
 
     def drawBroke(mode, canvas):
         if mode.broke:
@@ -508,6 +537,32 @@ class RegularGameMode(Mode):
             cy -= mode.scrollY
             canvas.create_image(cx, cy, image=ImageTk.PhotoImage(sprite))
 
+    def drawProgress(mode, canvas):
+        # Display Progress
+        if mode.displayProgress:
+            canvas.create_rectangle(0, 140, 600, 350, fill = 'white')
+            canvas.create_text(300, 160, text='Your Info',
+                               font = 'Georgia 24 bold')
+            canvas.create_text(300, 185, text=(f'Exp: {RegularGameMode.player.exp}    '
+                                               f'Level: {RegularGameMode.player.level}   '
+                                               f'Money: {RegularGameMode.player.money}'),
+                                               font = 'Georgia 18')
+            canvas.create_text(300, 220, text='Available Pokémons:',
+                               font = 'Georgia 18')
+            canvas.create_text(300, 240, text=f'{RegularGameMode.player.charList}',
+                               font = 'Georgia 18')
+            
+            canvas.create_text(300, 280, text='Inventory:', font = 'Georgia 18')
+            firstHalf = ('Master Ball:', RegularGameMode.player.inventory['Master Ball'],
+                         'Poké Ball:', RegularGameMode.player.inventory['Poké Ball'],
+                         'Full Restore:', RegularGameMode.player.inventory['Full Restore'])
+            canvas.create_text(300, 300, text=firstHalf, font = 'Georgia 18')
+            
+            secondHalf =('Ultra Ball:', RegularGameMode.player.inventory['Ultra Ball'],
+                         'Poison:', RegularGameMode.player.inventory['Poison'],
+                         'Great Ball:', RegularGameMode.player.inventory['Great Ball'])
+            canvas.create_text(300, 320, text=secondHalf, font = 'Georgia 18')
+
     def redrawAll(mode, canvas):
         # Draw the map
         canvas.create_image(mode.width/2 - mode.scrollX,
@@ -548,9 +603,13 @@ class RegularGameMode(Mode):
         canvas.create_rectangle(10, 350, 70, 380, fill = mode.backButton)
         canvas.create_text(40, 365, text = 'Back', fill = '#333945',
                            font = 'Georgia 22')
+        
+        # Draw player progress
+        mode.drawProgress(canvas)
 
 
 class BattleMode(Mode):
+    winner = 'unknown'
     def appStarted(mode):
         # Load all the inventory items
         mode.loadImages()
@@ -581,7 +640,6 @@ class BattleMode(Mode):
         mode.damageOnComp = 0
 
         mode.drawWinner = False
-        mode.winnter = 'no one'
         mode.decideWinnter = True
 
         mode.displayCheatMove = False
@@ -593,6 +651,7 @@ class BattleMode(Mode):
         mode.notEnoughItems = False
         mode.itemUsed = 'start'
         mode.itemIcon = mode.bag
+        mode.compItemIcon = mode.bag
 
         mode.purchase = False
         mode.broke = False
@@ -900,14 +959,14 @@ class BattleMode(Mode):
 
         # Ask for player's pokemon given all the available characters
         askPlayerPKM = (f'Your character choices are '
-                     f'{mode.player.charList}. Which character would'
+                     f'{mode.player.charList}. Which character would '
                      f'you like?')
         playerPKM = mode.getUserInput(askPlayerPKM).title()
 
         # Check whether the name entered is available
         while playerPKM not in mode.player.charList:
-            askAgainMsg = (f'You did not enter a valid character'
-                           f'Your character choices are'
+            askAgainMsg = (f'You did not enter a valid character. '
+                           f'Your character choices are '
                            f'{mode.player.charList}. Which '
                            f'character would you like?')
             playerPKM = mode.getUserInput(askAgainMsg).title()
@@ -939,8 +998,8 @@ class BattleMode(Mode):
                 comp_character = random.choice(choices)
     
         # Initialize computer's pokemon
-        mode.compPKM = Pokemon('Pikachu', mode.player.level, mode)
-        #mode.compPKM = Pokemon(comp_character, mode.player.level, mode)
+        #mode.compPKM = Pokemon('Pikachu', mode.player.level, mode)
+        mode.compPKM = Pokemon(comp_character, mode.player.level, mode)
 
         
         # Determine whether player or computer start based on their speed
@@ -1004,7 +1063,6 @@ class BattleMode(Mode):
             elif decision == 'Items':
                 mode.useInven = True
             
-            #mode.playerDone = True
 
     def runItemFeature(mode):
         if mode.itemUsed == 'Master Ball':
@@ -1028,6 +1086,8 @@ class BattleMode(Mode):
             
     
     def capture(mode):
+        BattleMode.winner = 'You'
+        print(BattleMode.winner)
         mode.drawCompPKM = False
         mode.player.updateCharList(f'{mode.compPKM.name}')
         mode.successfulCapture = True
@@ -1053,44 +1113,62 @@ class BattleMode(Mode):
                 effectivity.append(key)
                 if key > highest:
                     highest = key
-            print(mode.compPKM.moves)
 
             # Computer chooses a move based on player's level
             # When calculating damage, the computer always uses 
             # player's level to ensure they are evenly matches
             if mode.player.level == 3:
-                move = random.choice(mode.moveEffective(mode.compPKM,
+                normalMove = random.choice(mode.moveEffective(mode.compPKM,
                                             mode.playerPKM)[effectivity[0]])
-                mode.damageOnPlayer = mode.compPKM.damage(move,
-                                      mode.player.level, mode.playerPKM.type_)
+                move = random.choices(population = [normalMove, 'Poison', 'Full Restore'],
+                                      weights = [0.6, 0.2, 0,2])
             elif mode.player.level == 2:
                 if len(effectivity) >= 2:
-                    move = random.choice(mode.moveEffective(mode.compPKM,
+                    normalMove = random.choice(mode.moveEffective(mode.compPKM,
                                          mode.playerPKM)[effectivity[-2]])
-                    mode.damageOnPlayer = mode.compPKM.damage(move,
-                                        mode.player.level,mode.playerPKM.type_)
                 else:
                     print('<2')
-                    move = random.choice(mode.moveEffective(mode.compPKM,
+                    normalMove = random.choice(mode.moveEffective(mode.compPKM,
                                          mode.playerPKM)[effectivity[0]])
-                    mode.damageOnPlayer = mode.compPKM.damage(move,
-                                        mode.player.level,mode.playerPKM.type_)
+                move = random.choices(population = [normalMove, 'Poison', 'Full Restore'],
+                                      weights = [0.7, 0.15, 0.15])
             elif mode.player.level == 1:
-                move = random.choice(mode.moveEffective(mode.compPKM,
+                normalMove = random.choice(mode.moveEffective(mode.compPKM,
                                      mode.playerPKM)[effectivity[-1]])
-                mode.damageOnPlayer = mode.compPKM.damage(move,
-                                      mode.player.level,mode.playerPKM.type_)
-
+                move = random.choices(population = [normalMove, 'Poison', 'Full Restore'],
+                                      weights = [0.9, 0.1, 0.1])
+            
+            if (move == 'Poison'):
+                mode.compItemIcon = mode.poison
+            elif (move == 'Full Restore'):
+                mode.compItemIcon = mode.fullRestore
+            else:
+                move = str(move)
+                move = move[2:-2]
+            
             mode.compMove = MovesSprites(move, mode)
             mode.compMove.startX, mode.compMove.startY = 450, 180 
-            mode.drawCompMove= True
-
-            #mode.compDone = True
+            mode.drawCompMove= True    
+            
+            try:
+                mode.damageOnPlayer = mode.compPKM.damage(move,
+                                      mode.player.level, mode.playerPKM.type_)
+            except:
+                if move == 'Poison':
+                    if mode.playerPKM.level > 1:
+                        mode.playerPKM.level -= 1
+                        mode.playerPKM.changeMoves()
+                    mode.compItemIcon = mode.poison
+                elif move == 'Full Restore':
+                    mode.compPKM.hp = Pokemon(mode.compPKM.name, mode.compPKM.level, mode).hp
+                    mode.compItemIcon = mode.fullRestore
 
     def keyPressed(mode, event):
         if (mode.drawWinner) or (mode.successfulCapture):
-            if event.key == 'Space':
+            if event.key == 'r':
                 mode.app.setActiveMode(mode.app.regularGameMode)
+            if event.key == 'm':
+                mode.app.setActiveMode(mode.app.mazeGameMode)
         elif (event.key == 'c'):
             mode.cheat()
         elif (event.key == 'h'):
@@ -1123,18 +1201,23 @@ class BattleMode(Mode):
         if mode.decideWinnter:
             if (mode.playerPKM.hp > 0) and (mode.compPKM.hp <= 0):
                 mode.player.exp += 10
+                mode.player.money += 50
                 mode.drawWinner = True
                 mode.decideWinnter = False
-                mode.winner = 'You'
+                BattleMode.winner = 'You'
+                print(BattleMode.winner)
                 mode.player.updateLevel()
                 print(mode.player.level)
                 
             elif (mode.compPKM.hp > 0) and (mode.playerPKM.hp <= 0):
                 mode.drawWinner = True
-                mode.winner = 'Computer'
+                BattleMode.winner = 'Computer'
+                print(BattleMode.winner)
                 mode.decideWinnter = False
                 if mode.player.exp >= 5:
                     mode.player.exp -= 5
+                if mode.player.money >= 50:
+                    mode.player.money -= 50
                 mode.player.updateLevel()
 
     def playerMoveMove(mode):
@@ -1159,8 +1242,11 @@ class BattleMode(Mode):
     def compMoveMove(mode):
         # Start drawing computer move's sprite if conditions are met
         if mode.drawCompMove:
-            mode.compMove.spriteCounter = ((1 + mode.compMove.spriteCounter)
-                                            % len(mode.compMove.sprites))
+            try:
+                mode.compMove.spriteCounter = ((1 + mode.compMove.spriteCounter)
+                                                % len(mode.compMove.sprites))
+            except:
+                pass
             mode.compMove.startX -= 11.25
             mode.compMove.startY += 8
             mode.checkCompHit()
@@ -1269,39 +1355,39 @@ class BattleMode(Mode):
 
         if mode.purchase:
             if (10 < event.x < 190) and (70 < event.y < 180):
-                if mode.player.money - 100 > 0:
+                if mode.player.money - 100 >= 0:
                     mode.player.inventory['Master Ball'] = mode.player.inventory.get('Master Ball', 0) + 1
                     mode.player.money -= 100
                 else: mode.notEnoughMoney = True
 
             elif (210 < event.x < 390) and (70 < event.y < 180):
-                if mode.player.money - 200 > 0:
+                if mode.player.money - 200 >= 0:
                     mode.player.inventory['Full Restore'] = mode.player.inventory.get('Full Restore', 0) + 1
                     mode.player.money -= 200
                 else: mode.notEnoughMoney = True
 
             elif (410 < event.x < 590) and (70 < event.y < 180):
-                if mode.player.money - 250 > 0:
+                if mode.player.money - 250 >= 0:
                     mode.player.inventory['Poison'] = mode.player.inventory.get('Poison', 0) + 1
                     mode.player.money -= 250
                 else:mode.notEnoughMoney = True
             
             elif (10 < event.x < 190) and (220 < event.y < 325):
-                if mode.player.money - 50 > 0:
+                if mode.player.money - 30 >= 0:
                     mode.player.inventory['Poké Ball'] = mode.player.inventory.get('Poké Ball', 0) + 1
-                    mode.player.money -= 50
+                    mode.player.money -= 30
                 else: mode.notEnoughMoney = True
             
             elif (210 < event.x < 390) and (220 < event.y < 325):
-                if mode.player.money - 70 > 0:
+                if mode.player.money - 70 >= 0:
                     mode.player.inventory['Ultra Ball'] = mode.player.inventory.get('Ultra Ball', 0) + 1
                     mode.player.money -= 70
                 else: mode.notEnoughMoney = True
             
             elif (410 < event.x < 590) and (220 < event.y < 325):
-                if mode.player.money - 250 > 0:
+                if mode.player.money - 50 >= 0:
                     mode.player.inventory['Great Ball'] = mode.player.inventory.get('Great Ball', 0) + 1
-                    mode.player.money -= 250
+                    mode.player.money -= 50
                 else: mode.notEnoughMoney = True
             elif (10 < event.x < 70) and (350 < event.y < 380):
                 mode.useInven = True
@@ -1317,11 +1403,21 @@ class BattleMode(Mode):
                 canvas.create_image(mode.playerMove.startX, mode.playerMove.startY,
                                     image=ImageTk.PhotoImage(mode.itemIcon))
         elif mode.drawCompMove:
-            sprite = mode.compMove.sprites[mode.compMove.spriteCounter]
-            canvas.create_image(mode.compMove.startX, mode.compMove.startY,
-                                image=ImageTk.PhotoImage(sprite))
+            try:
+                canvas.create_rectangle(280, 125, 420, 155, fill = 'white')
+                canvas.create_text(350, 140, text=f'{mode.compMove.move}',
+                                   font = 'Georgia 18')
+                sprite = mode.compMove.sprites[mode.compMove.spriteCounter]
+                canvas.create_image(mode.compMove.startX, mode.compMove.startY,
+                                    image=ImageTk.PhotoImage(sprite))
+            except:
+                canvas.create_rectangle(280, 125, 420, 155, fill = 'white')
+                canvas.create_text(350, 140, text=f'{mode.compMove.move}',
+                                   font = 'Georgia 18')
+                canvas.create_image(mode.compMove.startX, mode.compMove.startY,
+                                    image=ImageTk.PhotoImage(mode.compItemIcon))
     
-   
+ 
     def drawHPBar(mode, canvas):
         canvas.create_text(82,30, text = (f'{int(mode.playerPKM.hp)}/'
                                           f'{mode.playerPKM.oghp}'),
@@ -1340,20 +1436,26 @@ class BattleMode(Mode):
                             image=ImageTk.PhotoImage(mode.compPKM.frontS))
 
     def drawResult(mode, canvas):
+        # This method draws if either player or computer beats each other
+        # In this case, player cannot catch the computer's Pokémon
         if mode.drawWinner:
-            canvas.create_rectangle(0, 240, 600, 400, fill = '#EAF0F1')
-            canvas.create_text(300,260,text=f'{mode.winner} WON!',fill ='black',
+            canvas.create_rectangle(0, 200, 600, 400, fill = '#EAF0F1')
+            canvas.create_text(300,220,text=f'{mode.winner} WON!',fill ='black',
                                font = 'Georgia 20')
-            canvas.create_text(300, 290, text=f'Your exp: {mode.player.exp}',
+            canvas.create_text(300, 250, text=f'Your exp: {mode.player.exp}',
                                fill = 'black', font = 'Georgia 20')
-            canvas.create_text(300, 320, text='Now your Pokemon list is:',
-                               fill = 'black', font = 'Georgia 16')
-            canvas.create_text(300, 340, text = f'{mode.player.charList}',
-                               fill = 'black', font = 'Georgia 16')
-            canvas.create_text(300,370, text= "Press 'Space' to go back.",
+            canvas.create_text(300, 280, text=f'Your level: {mode.player.level}',
                                fill = 'black', font = 'Georgia 20')
+            canvas.create_text(300, 320, text=f'Your money: {mode.player.money}',
+                               fill = 'black', font = 'Georgia 20')
+            canvas.create_text(300,360, text= "Press 'r' to go back to regular mode",
+                               fill = 'black', font = 'Georgia 18')
+            canvas.create_text(300,380, text="Press 'm' to go back to maze mode.",
+                               fill = 'black', font = 'Georgia 18')
 
     def drawCaptureResult(mode,canvas):
+        # This method is drawn when a succesful capture has happened
+        # Player's Pokémon list will get extended s
         if mode.successfulCapture:
             canvas.create_rectangle(0, 240, 600, 400, fill = '#EAF0F1')
             canvas.create_text(300, 260,
@@ -1363,7 +1465,9 @@ class BattleMode(Mode):
                                fill = 'black', font = 'Georgia 18')
             canvas.create_text(300, 320, text = f'{mode.player.charList}',
                                fill = 'black', font = 'Georgia 18')
-            canvas.create_text(300,360, text= "Press 'Space' to go back.",
+            canvas.create_text(300,360, text= "Press 'r' to go back to regular mode.",
+                               fill = 'black', font = 'Georgia 18')
+            canvas.create_text(300,380, text="Press 'm' to go back to maze mode.",
                                fill = 'black', font = 'Georgia 18')
 
     def drawCheatMove(mode, canvas):
@@ -1437,7 +1541,6 @@ class BattleMode(Mode):
             canvas.create_text(300,250, text="Press 'Space' to go back",
                                font = 'Courier 22')
 
-
     def drawStore(mode, canvas):
         if mode.purchase:
             canvas.create_image(300, 200, image=ImageTk.PhotoImage(mode.store))
@@ -1452,6 +1555,8 @@ class BattleMode(Mode):
             canvas.create_rectangle(10, 350, 70, 380, fill = '#DAE0E2')
             canvas.create_text(40, 365, text = 'Back', fill = '#333945',
                             font = 'Georgia 22')
+
+
 
 
     def redrawAll(mode, canvas):
@@ -1472,7 +1577,6 @@ class BattleMode(Mode):
         mode.drawCaptureResult(canvas)
 
 
-
 class MazeStart(Mode):
     # User can choose different difficulty levels
 
@@ -1487,14 +1591,17 @@ class MazeStart(Mode):
         if (((mode.width/2-100) < event.x < (mode.width/2+100)) and
             (160 < event.y < 190)):
             MazeStart.level = 'easy'
+            mode.app.mazeGameMode = MazeGameMode()
             mode.app.setActiveMode(mode.app.mazeGameMode)
         elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
             (220 < event.y < 250)):
             MazeStart.level = 'intermediate'
+            mode.app.mazeGameMode = MazeGameMode()
             mode.app.setActiveMode(mode.app.mazeGameMode)
         elif (((mode.width/2-100) < event.x < (mode.width/2+100)) and
             (280 < event.y < 310)):
             MazeStart.level = 'hard'
+            mode.app.mazeGameMode = MazeGameMode()
             mode.app.setActiveMode(mode.app.mazeGameMode)
         elif (10 < event.x < 70) and (350 < event.y < 380):
             mode.app.setActiveMode(mode.app.splashScreenMode)
@@ -1578,13 +1685,17 @@ class MazeGameMode(Mode):
         mode.wildPic = mode.app.loadImage('egg.png')
         mode.wildList = []
         mode.dropWildPokemon()
+        mode.displayIns = True
 
         mode.playerX, mode.playerY = mode.cellWidth//2, mode.cellHeight//2
         mode.right, mode.left, mode.up, mode.down = False, False, False, False
+        mode.playerPath = []
+        mode.playerPath.append((mode.playerX, mode.playerY))
 
         mode.loadSprites()
         mode.username = 'hi'
         mode.newPlayer = True
+        mode.displayProgress = True
         mode.loadProgress()
     
     def createMap(mode):
@@ -1617,19 +1728,6 @@ class MazeGameMode(Mode):
             
         mode.mazeBoard = choice[0]
         mode.solution = choice[1]
-
-        '''
-        colors = ['lightgreen', 'forestgreen']
-        solvable = False
-        while solvable == False:
-            mode.mazeBoard = [[random.choice(colors) for i in range(mode.cols)]
-                               for i in range(mode.rows)]
-            mode.mazeBoard[0][0] = 'lightgreen'
-            (path, solution) = MazeSolver(mode.mazeBoard).solve(printReport=True)
-            if solution != None:
-                solvable = True
-                mode.solution = path
-        '''
 
     def loadProgress(mode):
         # Learnt and modified from
@@ -1696,8 +1794,16 @@ class MazeGameMode(Mode):
             cy = mode.cellHeight//2 + row*mode.cellHeight
             if (cx == mode.playerX) and (cy == mode.playerY):
                 mode.app.battleMode = BattleMode()
+                winner = mode.app.battleMode.winner
                 mode.app.setActiveMode(mode.app.battleMode)
-                mode.wildList.remove((row,col))
+                print('winner')
+                print(winner)
+                if winner == 'You':
+                    mode.wildList.remove((row,col))
+                else:
+                    mode.playerPath.pop()
+                    mode.playerX, mode.playerY = mode.playerPath[-1]
+    
 
     def loadSprites(mode):
         # Codes modied from 
@@ -1810,8 +1916,12 @@ class MazeGameMode(Mode):
                 MazeGameMode.player.exp += 20
             elif MazeStart.level == 'hard':
                 MazeGameMode.player.exp += 30
+        
+        mode.playerPath.append((mode.playerX, mode.playerY))
 
     def keyPressed(mode, event):
+        mode.displayIns = False
+        mode.displayProgress = False
         if event.key == 'Space':
             if (mode.drawWinBool):
                 mode.app.setActiveMode(mode.app.splashScreenMode)
@@ -1897,8 +2007,10 @@ class MazeGameMode(Mode):
                                font = 'Georgia 24')
             canvas.create_text(300, 200, text=f'Your exp: {mode.player.exp}',
                                fill = 'black', font = 'Georgia 24')
-            canvas.create_text(300,250, text= "Press 'Space' to go back.",
-                               fill = 'black', font = 'Georgia 24')
+            canvas.create_text(300,250, text= "Press 'r' to go back to regular mode",
+                               fill = 'black', font = 'Georgia 20')
+            canvas.create_text(300,280, text="Press 'm' to go back to maze mode.",
+                               fill = 'black', font = 'Georgia 20')
 
     def drawWildPokemon(mode, canvas):
         # Draw wild Pokemon
@@ -1947,7 +2059,43 @@ class MazeGameMode(Mode):
         canvas.create_rectangle(10, 350, 70, 380, fill = '#DAE0E2')
         canvas.create_text(40, 365, text = 'Back', fill = '#333945',
                            font = 'Georgia 22')
-
+        
+        # Display instruction
+        if mode.displayIns:
+            canvas.create_rectangle(180, 20, 420, 120, fill = 'white')
+            canvas.create_text(300, 40, text='GOAL',
+                               font = 'Georgia 24 bold')
+            canvas.create_text(300, 70, text='move from top-right',
+                               font = 'Georgia 18')
+            canvas.create_text(300, 100, text='to bottom-left.',
+                               font = 'Georgia 18')
+        
+        # Display Progress
+        if mode.displayProgress:
+            canvas.create_rectangle(0, 140, 600, 350, fill = 'white')
+            canvas.create_text(300, 160, text='Your Info',
+                               font = 'Georgia 24 bold')
+            canvas.create_text(300, 185, text=(f'Exp: {MazeGameMode.player.exp}    '
+                                               f'Level: {MazeGameMode.player.level}   '
+                                               f'Money: {MazeGameMode.player.money}'),
+                                               font = 'Georgia 18')
+            canvas.create_text(300, 220, text='Available Pokémons:',
+                               font = 'Georgia 18')
+            canvas.create_text(300, 240, text=f'{MazeGameMode.player.charList}',
+                               font = 'Georgia 18')
+            
+            canvas.create_text(300, 280, text='Inventory:', font = 'Georgia 18')
+            firstHalf = ('Master Ball:', MazeGameMode.player.inventory['Master Ball'],
+                         'Poké Ball:', MazeGameMode.player.inventory['Poké Ball'],
+                         'Full Restore:', MazeGameMode.player.inventory['Full Restore'])
+            canvas.create_text(300, 300, text=firstHalf, font = 'Georgia 18')
+            
+            secondHalf =('Ultra Ball:', MazeGameMode.player.inventory['Ultra Ball'],
+                         'Poison:', MazeGameMode.player.inventory['Poison'],
+                         'Great Ball:', MazeGameMode.player.inventory['Great Ball'])
+            canvas.create_text(300, 320, text=secondHalf, font = 'Georgia 18')
+    
+            
 
 class HelpMode(Mode):
     def appStarted(mode):

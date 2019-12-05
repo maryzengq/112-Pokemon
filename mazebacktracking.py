@@ -1,3 +1,6 @@
+# This is the backtracking class that helps me generate randomized maze maps
+# that are solvable
+
 # Copied from: http://www.cs.cmu.edu/~112/notes/hw9.html
 from cmu_112_graphics import *
 from tkinter import *

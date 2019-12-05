@@ -1,3 +1,5 @@
+# This is a file where I kept my raw class data during planning
+
 class Pokemon(object):
     def __init__(self, name):
         startPokemon = {
