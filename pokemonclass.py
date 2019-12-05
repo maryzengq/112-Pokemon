@@ -27,7 +27,7 @@ class Pokemon(object):
                       'Sand Attack', 'Quick Attack'], 'Speed': 55,
                       'Front': 'eeveefront.png', 'Back': 'eeveeback.png'},
             'Magnemite': {'Type': ['Electric', 'Steel'], 'HP': 25,
-                          'Moves': [ 'Tackle', 'Thunder Shock'], 'Speed': 45,
+                          'Moves': ['Tackle', 'Thunder Shock'], 'Speed': 45,
                           'Front': 'magfront.png', 'Back': 'magback.png'},
             'Bulbasaur': {'Type': ['Grass', 'Poison'], 'HP': 45,
                           'Moves': ['Tackle', 'Vine Whip', 'Razor Leaf'],
@@ -226,10 +226,9 @@ class Pokemon(object):
 
     def changeMoves(self):
         if self.level == 1:
-            self.moves = self.moves
+            self.moves = addMoves[self.name][1]
         elif self.level == 2:
-            self.moves.add(addMoves[self.name][2])
+            self.moves = addMoves[self.name][2]
         elif self.level == 3:
-            self.moves.add(addMoves[self.name][2])
-            self.moves.add(addMoves[self.name][3])
+            self.moves = addMoves[self.name][3]
 

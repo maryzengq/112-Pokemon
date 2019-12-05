@@ -64,10 +64,11 @@ class MovesSprites(object):
         self.app = app
         self.startX = 0
         self.startY = 0
-        self.image = movesSprites[self.move]
-        self.spritestrip = self.app.loadImage(self.image)
-        self.sprites = [ ]
-        for i in range(4):
-            sprite = self.spritestrip.crop((32*i, 0, 32*(i+1), 32))
-            self.sprites.append(sprite)
+        if self.move in movesSprites.keys():
+            self.image = movesSprites[self.move]
+            self.spritestrip = self.app.loadImage(self.image)
+            self.sprites = [ ]
+            for i in range(4):
+                sprite = self.spritestrip.crop((32*i, 0, 32*(i+1), 32))
+                self.sprites.append(sprite)
         self.spriteCounter = 0
