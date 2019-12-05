@@ -457,30 +457,49 @@ class RegularGameMode(Mode):
                                text=RegularGameMode.player.money,
                                font='Courier 18')
 
-            mode.drawItemsOwned(canvas)
+            #draw number of items owned
+            canvas.create_text(143, 187,
+                text=RegularGameMode.player.inventory['Master Ball'],
+                font='Courier 14')
+            canvas.create_text(343, 187,
+                text=RegularGameMode.player.inventory['Full Restore'],
+                font='Courier 14')
+            canvas.create_text(543, 187,
+                text=RegularGameMode.player.inventory['Poison'],
+                font='Courier 14')
+            canvas.create_text(143, 337,
+                text=RegularGameMode.player.inventory['Poké Ball'],
+                font='Courier 14')
+            canvas.create_text(343, 337,
+                text=RegularGameMode.player.inventory['Ultra Ball'],
+                font='Courier 14')
+            canvas.create_text(543, 337,
+                text = RegularGameMode.player.inventory['Great Ball'],
+                font = 'Courier 14')
+            
             mode.drawBroke(canvas)
             mode.drawNotEnoughMoney(canvas)
 
     def drawItemsOwned(mode, canvas):        
         #draw number of items owned
-        canvas.create_text(143, 187,
+        canvas.create_text(32, 125,
             text=RegularGameMode.player.inventory['Master Ball'],
-            font='Courier 14')
-        canvas.create_text(343, 187,
+            font='Courier 20 bold')
+        canvas.create_text(232, 125,
             text=RegularGameMode.player.inventory['Full Restore'],
-            font='Courier 14')
-        canvas.create_text(543, 187,
+            font='Courier 20 bold')
+        canvas.create_text(432, 125,
             text=RegularGameMode.player.inventory['Poison'],
-            font='Courier 14')
-        canvas.create_text(143, 337,
+            font='Courier 20 bold')
+        canvas.create_text(32, 277,
             text=RegularGameMode.player.inventory['Poké Ball'],
-            font='Courier 14')
-        canvas.create_text(343, 337,
+            font='Courier 20 bold')
+        canvas.create_text(232, 277,
             text=RegularGameMode.player.inventory['Ultra Ball'],
-            font='Courier 14')
-        canvas.create_text(543, 337,
+            font='Courier 20 bold')
+        canvas.create_text(432, 277,
             text = RegularGameMode.player.inventory['Great Ball'],
-            font = 'Courier 14')
+            font = 'Courier 20 bold')
 
     def drawBroke(mode, canvas):
         if mode.broke:

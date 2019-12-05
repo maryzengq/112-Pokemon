@@ -6,7 +6,7 @@ class Player(object):
         self.exp = exp
         self.level = level
         if money == None:
-            self.money = 100
+            self.money = 500
         else:
             self.money = money
         
